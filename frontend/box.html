@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <title>Hoja de Trabajo</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #212529; color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;}
+        .tarjeta { background-color: #343a40; border-radius: 12px; padding: 25px; width: 100%; max-width: 400px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.5); margin-top: 20px;}
+        h1 { margin-top: 0; font-size: 28px; color: #ffc107; text-align: center; border-bottom: 2px solid #495057; padding-bottom: 15px;}
+        .dato { margin-bottom: 20px; }
+        .etiqueta { font-size: 14px; color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
+        .valor { font-size: 22px; font-weight: bold; margin: 0;}
+        .falla-box { background-color: #495057; padding: 15px; border-radius: 8px; border-left: 5px solid #dc3545;}
+        .falla-texto { font-size: 18px; line-height: 1.5; margin: 0;}
+        
+        /* Pantalla de error cuando el box está vacío */
+        .vacio { text-align: center; color: #adb5bd; margin-top: 50px; }
+        .vacio svg { width: 80px; height: 80px; margin-bottom: 20px; fill: #6c757d;}
+    </style>
+</head>
+<body>
+
+    <div id="contenido">
+        <h2 style="text-align: center; color: #adb5bd;">Cargando Box...</h2>
+    </div>
+
+    <script>
+        // 1. Extraemos el nombre del box desde la URL (Ej: de /box/Box%201 sacamos "Box 1")
+        const ruta = window.location.pathname.split('/');
+        const nombreBox = decodeURIComponent(ruta[ruta.length - 1]);
+
+        // 2. Buscamos los datos en la API
+        async function cargarDatosBox() {
+            try {
+                const respuesta = await fetch(`/api/ordenes/qr/${nombreBox}`);
+                
+                if (!respuesta.ok) {
+                    // Si tira error 404, significa que no hay auto asignado a este box
+                    mostrarVacio();
+                    return;
+                }
+
+                const datos = await respuesta.json();
+                mostrarVehiculo(datos);
+
+            } catch (error) {
+                mostrarVacio();
+            }
+        }
+
+        // 3. Pintar la pantalla con los datos del auto
+        function mostrarVehiculo(datos) {
+            document.getElementById('contenido').innerHTML = `
+                <div class="tarjeta">
+                    <h1>${nombreBox}</h1>
+                    
+                    <div class="dato">
+                        <div class="etiqueta">Vehículo</div>
+                        <p class="valor">${datos.vehiculo}</p>
+                    </div>
+
+                    <div class="dato">
+                        <div class="etiqueta">Patente</div>
+                        <p class="valor" style="color: #17a2b8; font-size: 26px;">${datos.patente}</p>
+                    </div>
+
+                    <div class="dato falla-box">
+                        <div class="etiqueta" style="color: #ffc107;">Trabajo a realizar</div>
+                        <p class="falla-texto">${datos.falla}</p>
+                    </div>
+
+                    <div class="dato" style="margin-top: 25px; text-align: center;">
+                        <div class="etiqueta">Dueño</div>
+                        <p class="valor" style="font-size: 18px; font-weight: normal;">${datos.dueño}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. Pantalla alternativa si el box está vacío
+        function mostrarVacio() {
+            document.getElementById('contenido').innerHTML = `
+                <div class="vacio">
+                    <svg viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" /></svg>
+                    <h2>${nombreBox} Disponible</h2>
+                    <p>No hay ningún vehículo asignado a este lugar en este momento.</p>
+                </div>
+            `;
+        }
+
+        cargarDatosBox();
+    </script>
+</body>
+</html>
