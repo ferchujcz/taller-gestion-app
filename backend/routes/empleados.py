@@ -106,3 +106,44 @@ def eliminar_empleado(empleado_id: int, db: Session = Depends(get_db)):
         db.delete(emp)
         db.commit()
     return {"status": "ok"}
+
+# Cuando el empleado vuelve a fichar (Salida)
+@router.post("/fichar")
+def fichar_empleado(datos: dict, db: Session = Depends(get_db)):
+    # Buscar si tiene una entrada sin salida hoy
+    asistencia_abierta = db.query(models.Asistencia).filter(
+        models.Asistencia.documento == datos['documento'],
+        models.Asistencia.hora_salida == None
+    ).first()
+    
+    if asistencia_abierta:
+        asistencia_abierta.hora_salida = datetime.datetime.utcnow()
+        db.commit()
+        return {"mensaje": "Salida registrada correctamente. Turno cerrado."}
+    else:
+        # Ficha entrada nueva
+        nueva = models.Asistencia(documento=datos['documento'])
+        db.add(nueva)
+        db.commit()
+        return {"mensaje": "Entrada registrada correctamente."}
+# Obtener TODO el historial de fichadas para el reporte mensual
+@router.get("/asistencia/")
+def obtener_historial_asistencia(db: Session = Depends(get_db)):
+    asistencias = db.query(models.RegistroAsistencia).all()
+    resultado = []
+    
+    for a in asistencias:
+        # Extraemos el nombre del empleado directamente desde la relación de la base de datos
+        nombre_emp = a.empleado.nombre if a.empleado else "Desconocido"
+        dni_emp = a.empleado.documento if a.empleado else "Sin DNI"
+        
+        resultado.append({
+            "id": a.id,
+            "empleado_id": a.empleado_id,
+            "nombre": nombre_emp,
+            "documento": dni_emp,
+            "hora_entrada": a.hora_entrada,
+            "hora_salida": a.hora_salida
+        })
+        
+    return resultado

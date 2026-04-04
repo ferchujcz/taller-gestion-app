@@ -40,7 +40,7 @@ class OrdenTrabajo(Base):
     ubicacion = Column(String, nullable=True)         # Ej: "Box 1", "Fosa"
     descripcion_falla = Column(String)
     fecha_ingreso = Column(DateTime, default=datetime.utcnow)
-    
+    fecha_terminado = Column(DateTime, nullable=True)
     # Relación
     vehiculo = relationship("Vehiculo", back_populates="ordenes")
     # Agregamos esta línea para vincular la orden con sus repuestos/servicios:
@@ -74,7 +74,8 @@ class TallerConfig(Base):
     nombre_taller = Column(String, default="Mi Taller Automotriz")
     direccion = Column(String, default="")
     telefono = Column(String, default="")
-    logo_b64 = Column(Text, nullable=True) # Aquí guardaremos la imagen    
+    email = Column(String, default="") # <--- ESTA ES LA LÍNEA QUE FALTABA
+    logo_b64 = Column(Text, nullable=True)
 # NUEVA TABLA: Empleados
 class Empleado(Base):
     __tablename__ = "empleados"

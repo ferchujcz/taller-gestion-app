@@ -45,8 +45,8 @@
         .columna-tablero { flex: 1; min-width: 300px; background-color: rgba(0, 0, 0, 0.02); border-radius: 10px; padding: 20px; border: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 15px;}
         .tarjeta-orden { background: var(--bg-card); padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border-color); border-left-width: 4px; transition: transform 0.2s;}
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px);}
-        .modal-content { background: var(--bg-card); width: 700px; max-width: 95%; border-radius: 12px; padding: 35px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-        .lista-items { list-style: none; padding: 0; margin: 0 0 25px 0; max-height: 250px; overflow-y: auto;}
+        .modal-content { background: var(--bg-card); width: 850px; max-width: 95%; border-radius: 12px; padding: 35px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+        .lista-items { list-style: none; padding: 0; margin: 0 0 25px 0; max-height: 350px; overflow-y: auto;}
         .lista-items li { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border-color); font-size: 0.95rem; align-items: center;}
         .tabla-profesional { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
         .tabla-profesional th { text-align: left; background-color: rgba(0, 0, 0, 0.03); padding: 15px; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px;}
@@ -60,6 +60,9 @@
         .vista-movil p { text-align: center; color: var(--text-muted); margin-bottom: 30px; font-size: 1rem;}
         .vista-movil select, .vista-movil input, .vista-movil textarea { font-size: 1.1rem; padding: 15px; margin-bottom: 15px; height: auto; border-radius: 8px;}
         .vista-movil button { font-size: 1.1rem; padding: 18px; width: 100%; margin-bottom: 15px; border-radius: 8px;}
+        
+        /* Ocultar flechitas en inputs numéricos */
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 
@@ -77,30 +80,39 @@
         
         <div id="mecanico_panel_espera">
             <p>Seleccione el vehículo que va a ingresar a este espacio de trabajo.</p>
-            <select id="mecanico_vehiculo_espera"><option value="">-- Buscando vehículos en espera... --</option></select>
-            <button class="btn-primary" onclick="mecanicoIngresarVehiculo()"><i class="ph ph-arrow-circle-down"></i> Ingresar Vehículo al Box</button>
+            <select id="mecanico_vehiculo_espera" style="font-size: 1.2rem; padding: 20px;"><option value="">-- Buscando vehículos... --</option></select>
+            <button class="btn-primary" style="padding: 20px; font-size: 1.2rem;" onclick="mecanicoIngresarVehiculo()"><i class="ph ph-arrow-circle-down"></i> Ingresar Vehículo al Box</button>
         </div>
 
         <div id="mecanico_panel_trabajo" style="display: none;">
-            <div style="background: var(--dark); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-                <span style="font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase;">Trabajando en:</span><br>
-                <strong id="mecanico_auto_trabajando" style="font-size: 1.2rem;"></strong>
+            <div style="background: var(--dark); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <span style="font-size: 0.9rem; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px;">🔧 Trabajando en:</span><br>
+                <strong id="mecanico_auto_trabajando" style="font-size: 1.4rem;"></strong>
             </div>
+            
             <input type="hidden" id="mecanico_orden_activa">
-            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-                <label style="color: var(--primary);"><i class="ph ph-clipboard-text"></i> Detallar Tarea o Repuesto</label>
-                <input type="text" id="mec_item_desc" placeholder="Ej: Cambio de aceite / Filtro / Stage 1" style="margin-bottom: 10px;">
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;"><div style="flex: 1;"><label>Cantidad</label><input type="number" id="mec_item_cant" value="1" style="text-align: center; margin:0;"></div></div>
-                <label>Notas Adicionales (Opcional)</label>
-                <textarea id="mec_item_notas" placeholder="Ej: Faltó cambiar líquido de frenos..."></textarea>
-                <button class="btn-dark" onclick="mecanicoAgregarRepuesto()"><i class="ph ph-plus"></i> Añadir Trabajo a la Orden</button>
+            
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 2px solid var(--border-color); margin-bottom: 25px;">
+                <label style="color: var(--primary); font-size: 1rem;"><i class="ph ph-plus-circle"></i> Cargar al Presupuesto</label>
+                <select id="mec_item_tipo" style="font-size: 1.1rem; padding: 15px; margin-bottom: 15px; font-weight: bold;">
+                    <option value="TAREA">🔧 Tarea / Mano de Obra</option>
+                    <option value="REPUESTO">📦 Repuesto Utilizado</option>
+                </select>
+                <input type="text" id="mec_item_desc" placeholder="Descripción (Ej: Filtro de Aceite / Limpieza)" style="font-size: 1.1rem; padding: 15px; margin-bottom: 15px;">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;"><label>Cantidad</label><input type="number" id="mec_item_cant" value="1" min="1" style="text-align: center; font-size: 1.2rem; padding: 15px; margin:0;"></div>
+                </div>
+                <label>Notas para el dueño/cliente (Opcional)</label>
+                <textarea id="mec_item_notas" placeholder="Ej: La rosca del cárter estaba barrida..." style="font-size: 1.1rem; padding: 15px; min-height: 80px;"></textarea>
+                <button class="btn-dark" style="width: 100%; padding: 20px; font-size: 1.1rem;" onclick="mecanicoAgregarRepuesto()"><i class="ph ph-check"></i> Cargar a la Orden</button>
             </div>
-            <h4 style="margin: 10px 0 10px 0; color: var(--text-muted); text-transform: uppercase; font-size: 0.9rem;">Historial de Tareas:</h4>
-            <div id="mecanico_lista_items"></div>
-            <hr style="border: 0; border-top: 2px dashed var(--border-color); margin: 30px 0;">
-            <button class="btn-success" onclick="mecanicoTerminarTrabajo()"><i class="ph ph-check-circle"></i> Terminar Trabajo y Liberar Box</button>
+            
+            <h4 style="margin: 10px 0 15px 0; color: var(--text-muted); text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Historial de lo que hiciste hoy:</h4>
+            <div id="mecanico_lista_items" style="margin-bottom: 30px;"></div>
+
+            <button class="btn-success" style="width: 100%; padding: 20px; font-size: 1.2rem;" onclick="mecanicoTerminarTrabajo()"><i class="ph ph-flag-checkered"></i> Terminar Auto y Liberar Box</button>
         </div>
-        <div style="text-align: center; margin-top: 20px;"><button class="btn-outline" style="padding: 15px;" onclick="window.location.href='/'">Volver</button></div>
+        <div style="text-align: center; margin-top: 20px;"><button class="btn-outline" style="padding: 15px 30px;" onclick="window.location.href='/'">Volver</button></div>
     </div>
 
     <div id="pantalla-fichada" style="display: none;" class="vista-movil">
@@ -144,11 +156,13 @@
             <div class="content-area">
                 
                 <div id="sec-dashboard" class="section active">
-                    <div class="hero-banner"><div><h1>Panel Estratégico</h1><p>Control operativo y financiero en tiempo real.</p></div><i class="ph ph-trend-up"></i></div>
+                    <div class="hero-banner"><div><h1>Panel Estratégico</h1><p>Control operativo, tiempos y finanzas en tiempo real.</p></div><i class="ph ph-trend-up"></i></div>
                     
-                    <div class="row" style="margin-bottom: 25px;">
+                    <div class="row" style="margin-bottom: 20px;">
                         <div class="kpi-card" style="border-bottom-color: var(--primary);"><div><div class="kpi-title">Ingresos este Mes</div><h2 class="kpi-value" id="dash-autos-mes">0</h2></div><i class="ph ph-car-profile" style="font-size: 2.5rem; color: var(--border-color);"></i></div>
-                        <div class="kpi-card" style="border-bottom-color: var(--warning);"><div><div class="kpi-title">Vehículos en Box</div><h2 class="kpi-value" id="dash-box">0</h2></div><i class="ph ph-wrench" style="font-size: 2.5rem; color: var(--border-color);"></i></div>
+                        
+                        <div class="kpi-card" style="border-bottom-color: var(--warning);"><div><div class="kpi-title">Tiempo Promedio por Auto</div><h2 class="kpi-value" id="dash-tiempo-promedio" style="font-size: 1.8rem;">0 hs</h2></div><i class="ph ph-clock-countdown" style="font-size: 2.5rem; color: var(--border-color);"></i></div>
+                        
                         <div class="kpi-card" style="border-bottom-color: var(--success);"><div><div class="kpi-title">Terminados (Por Cobrar)</div><h2 class="kpi-value" id="dash-terminados">0</h2></div><i class="ph ph-check-circle" style="font-size: 2.5rem; color: var(--border-color);"></i></div>
                     </div>
                     
@@ -158,7 +172,7 @@
                             <div class="chart-container"><canvas id="chartFinanzas"></canvas></div>
                         </div>
                         <div class="col card" style="flex: 1;">
-                            <div class="card-header">Personal Trabajando <i class="ph ph-users" style="color:var(--text-muted)"></i></div>
+                            <div class="card-header">Personal Activo Ahora <i class="ph ph-users"></i></div>
                             <ul id="lista-presentes-dash" style="list-style: none; padding: 0; margin:0; max-height: 250px; overflow-y: auto;"></ul>
                         </div>
                     </div>
@@ -167,7 +181,7 @@
                 <div id="sec-clientes" class="section">
                     <div class="row">
                         <div class="col card" style="flex: 1;">
-                            <div class="card-header" style="color: var(--dark);">Directorio de Clientes <i class="ph ph-address-book"></i></div>
+                            <div class="card-header" style="color: var(--primary);">Historial Clínico: <span id="crm_nombre_cliente" style="color: var(--text-main); font-weight: 900;">Seleccione un cliente...</span> <i class="ph ph-file-magnifying-glass"></i></div>
                             <input type="text" id="buscador_crm" placeholder="Buscar por Nombre o Teléfono..." style="margin-bottom: 15px; border-color: var(--primary);" onkeyup="filtrarCRM()">
                             <div style="max-height: 550px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
                                 <table class="tabla-profesional" style="margin: 0;" id="tabla_directorio_crm">
@@ -218,7 +232,7 @@
                         <div class="card-header" style="color: var(--primary);">Cotizador Rápido de Servicios <i class="ph ph-calculator"></i></div>
                         <div class="row" style="background: rgba(0, 0, 0, 0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 25px; align-items: flex-end;">
                             <div class="col"><label>Cliente (Opcional)</label><input type="text" id="rapido_cliente" placeholder="Ej: Juan Pérez" style="margin:0;"></div>
-                            <div class="col"><label>Marca</label><input type="text" id="rapido_marca" list="lista-marcas" oninput="buscarModelos('rapido_marca', 'lista-modelos-rapido')" placeholder="Ej: Volkswagen" style="margin:0;" autocomplete="off"></div>
+                            <div class="col"><label>Marca</label><input type="text" id="rapido_marca" list="lista-marcas-rapido" oninput="buscarMarcasDinamico(this.value, 'lista-marcas-rapido'); buscarModelos(this.value, 'lista-modelos-rapido')" placeholder="Ej: Volkswagen" style="margin:0;" autocomplete="off"><datalist id="lista-marcas-rapido"></datalist></div>
                             <div class="col"><label>Modelo</label><input type="text" id="rapido_modelo" list="lista-modelos-rapido" placeholder="Ej: Vento" style="margin:0;" autocomplete="off"><datalist id="lista-modelos-rapido"></datalist></div>
                         </div>
                         <div style="background: var(--bg-body); padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid var(--border-color);">
@@ -246,10 +260,10 @@
                             <div class="col">
                                 <label>Patente</label><input type="text" id="patente" required style="text-transform: uppercase;" placeholder="Ej: AB123CD" onblur="calcularAnoPorPatente()">
                                 <div class="row">
-                                    <div class="col" style="flex: 2;"><label>Marca</label><input type="text" id="recepcion_marca" list="lista-marcas" required autocomplete="off" oninput="buscarModelos('recepcion_marca', 'lista-modelos-recepcion')" placeholder="Seleccione o escriba..."><datalist id="lista-marcas"></datalist></div>
+                                    <div class="col" style="flex: 2;"><label>Marca</label><input type="text" id="recepcion_marca" list="lista-marcas-recepcion" required autocomplete="off" oninput="buscarMarcasDinamico(this.value, 'lista-marcas-recepcion'); buscarModelos(this.value, 'lista-modelos-recepcion')" placeholder="Escriba para buscar..."><datalist id="lista-marcas-recepcion"></datalist></div>
                                     <div class="col" style="flex: 1;"><label>Año</label><input type="number" id="anio"></div>
                                 </div>
-                                <label>Modelo / Versión</label><input type="text" id="recepcion_modelo" list="lista-modelos-recepcion" required autocomplete="off" placeholder="Ej: Amarok 2.0 TDI"><datalist id="lista-modelos-recepcion"></datalist>
+                                <label>Modelo / Versión</label><input type="text" id="recepcion_modelo" list="lista-modelos-recepcion" required autocomplete="off" placeholder="Ej: Amarok"><datalist id="lista-modelos-recepcion"></datalist>
                             </div>
                             <div class="col">
                                 <label>Cliente Existente</label><select id="cliente_id"><option value="">Seleccione...</option></select>
@@ -300,26 +314,95 @@
                     </div>
                     
                     <div class="card">
-                        <div class="card-header">Reporte de Asistencia Diaria <i class="ph ph-clock"></i></div>
-                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: -10px;">(El cálculo histórico completo requiere implementación en Backend Python. Mostrando presentes actuales).</p>
+                        <div class="card-header">Reporte Mensual de Horas Trabajadas <i class="ph ph-calendar-check"></i></div>
                         <table class="tabla-profesional">
-                            <thead><tr><th>Empleado</th><th>Hora de Entrada</th><th>Estado</th></tr></thead>
-                            <tbody id="lista-reporte-horas"></tbody>
+                            <thead><tr><th>Empleado</th><th>Horas Acumuladas este Mes</th><th>Estado Actual</th></tr></thead>
+                            <tbody id="lista-reporte-mensual"></tbody>
                         </table>
                     </div>
                 </div>
+                                    
+                <div id="sec-caja" class="section">
+                    <div class="row">
+                        <div class="col card" style="flex: 1;">
+                            <div class="card-header">Registrar Movimiento <i class="ph ph-currency-circle-dollar"></i></div>
+                            <form id="formCaja">
+                                <div class="row">
+                                    <div class="col"><label>Tipo</label><select id="caja_tipo" required><option value="INGRESO">Ingreso (+)</option><option value="EGRESO">Egreso (-)</option></select></div>
+                                    <div class="col"><label>Método</label><select id="caja_metodo" required><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia / MP</option></select></div>
+                                </div>
+                                <label>Monto ($)</label><input type="number" step="0.01" id="caja_monto" required>
+                                <label>Motivo</label><input type="text" id="caja_motivo" required placeholder="Ej: Cobro servicio">
+                                <button type="submit" class="btn-primary" style="width: 100%;"><i class="ph ph-plus-circle"></i> Registrar Movimiento</button>
+                            </form>
+                        </div>
+                        <div class="col card" style="flex: 2;">
+                            <div class="card-header">Últimos Movimientos <i class="ph ph-list-numbers"></i></div>
+                            <div style="max-height: 400px; overflow-y: auto;">
+                                <table class="tabla-profesional">
+                                    <thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 1;"><tr><th>Fecha</th><th>Motivo y Método</th><th>Monto</th><th style="text-align:center;">Acción</th></tr></thead>
+                                    <tbody id="lista-caja"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
-                <div id="sec-caja" class="section"><div class="row"><div class="col card" style="flex: 1;"><div class="card-header">Registrar Movimiento <i class="ph ph-currency-circle-dollar"></i></div><form id="formCaja"><div class="row"><div class="col"><label>Tipo</label><select id="caja_tipo" required><option value="INGRESO">Ingreso (+)</option><option value="EGRESO">Egreso (-)</option></select></div><div class="col"><label>Método</label><select id="caja_metodo" required><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia / MP</option></select></div></div><label>Monto ($)</label><input type="number" step="0.01" id="caja_monto" required><label>Motivo</label><input type="text" id="caja_motivo" required placeholder="Ej: Cobro servicio"><button type="submit" class="btn-primary" style="width: 100%;"><i class="ph ph-plus-circle"></i> Registrar Movimiento</button></form></div><div class="col card" style="flex: 2;"><div class="card-header">Últimos Movimientos <i class="ph ph-list-numbers"></i></div><div style="max-height: 400px; overflow-y: auto;"><table class="tabla-profesional"><thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 1;"><tr><th>Fecha</th><th>Motivo</th><th>Monto</th><th style="text-align:center;">Acción</th></tr></thead><tbody id="lista-caja"></tbody></table></div></div></div></div>
-                
-                <div id="sec-configuracion" class="section"><div class="row"><div class="col card" style="flex: 2;"><div class="card-header">Datos Institucionales <i class="ph ph-buildings"></i></div><form id="formConfig"><label>Nombre del Taller</label><input type="text" id="conf_nombre" placeholder="Ej: 3D Racer"><label>Dirección</label><input type="text" id="conf_direccion" placeholder="Ej: Calle Falsa 123, Oberá"><div class="row"><div class="col"><label>Teléfono</label><input type="text" id="conf_telefono" placeholder="Ej: 3755-123456"></div><div class="col"><label>Email</label><input type="email" id="conf_email"></div></div></form></div><div class="col card" style="flex: 1; display: flex; flex-direction: column; align-items: center;"><div class="card-header" style="width: 100%; text-align: center;">Logo Oficial</div><img id="preview_logo" src="" style="max-width: 150px; max-height: 150px; display: none; margin-bottom: 20px; border-radius:8px;"><input type="file" id="input_logo" accept="image/png, image/jpeg" style="border: none; padding: 0;"><button type="button" class="btn-success" style="width: 100%; margin-top: auto;" onclick="guardarConfiguracion()"><i class="ph ph-floppy-disk"></i> Guardar Cambios</button></div></div></div>
+                <div id="sec-configuracion" class="section">
+                    <div class="row">
+                        <div class="col card" style="flex: 2;">
+                            <div class="card-header">Datos Institucionales <i class="ph ph-buildings"></i></div>
+                            <form id="formConfig">
+                                <label>Nombre del Taller</label><input type="text" id="conf_nombre" placeholder="Ej: 3D Racer">
+                                <label>Dirección</label><input type="text" id="conf_direccion" placeholder="Ej: Calle Falsa 123, Oberá">
+                                <div class="row">
+                                    <div class="col"><label>Teléfono</label><input type="text" id="conf_telefono" placeholder="Ej: 3755-123456"></div>
+                                    <div class="col"><label>Email</label><input type="email" id="conf_email"></div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col card" style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                            <div class="card-header" style="width: 100%; text-align: center;">Logo Oficial</div>
+                            <img id="preview_logo" src="" style="max-width: 150px; max-height: 150px; display: none; margin-bottom: 20px; border-radius:8px;">
+                            <input type="file" id="input_logo" accept="image/png, image/jpeg" style="border: none; padding: 0;">
+                            <button type="button" class="btn-success" style="width: 100%; margin-top: auto;" onclick="guardarConfiguracion()"><i class="ph ph-floppy-disk"></i> Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-presupuesto" class="modal-overlay"><div class="modal-content" style="width: 800px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;"><h3 style="margin: 0; color: var(--dark); font-size: 1.3rem;"><i class="ph ph-file-text"></i> Detalle de Presupuesto Oficial</h3><button onclick="document.getElementById('modal-presupuesto').style.display='none'" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="ph ph-x"></i></button></div><input type="hidden" id="modal_orden_id"><div style="background: var(--bg-body); padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid var(--border-color);"><label>1. Carga Rápida</label><select id="select_catalogo" onchange="seleccionarServicioPreCargado()" style="margin-bottom: 15px;"></select><label>2. Detalles del Ítem</label><div class="row" style="align-items: flex-end;"><div class="col" style="flex: 2;"><input type="text" id="item_desc" style="margin:0;" placeholder="Descripción"></div><div class="col" style="flex: 0.5;"><input type="number" id="item_cant" value="1" style="margin:0;" placeholder="Cant."></div><div class="col"><input type="number" id="item_precio" style="margin:0;" placeholder="Precio Unit."></div><button class="btn-success" onclick="agregarItemPresupuesto()"><i class="ph ph-plus"></i></button></div></div><ul class="lista-items" id="lista_items_orden"></ul><div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;"><h3 style="margin: 0; font-size: 1.5rem;">Total: <span style="color: var(--primary);">$<span id="modal_total">0.00</span></span></h3><button class="btn-primary" onclick="generarPDFOficial()"><i class="ph ph-printer"></i> Imprimir Oficial</button></div></div></div>
+    <div id="modal-presupuesto" class="modal-overlay">
+        <div class="modal-content" style="width: 850px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--dark); font-size: 1.3rem;"><i class="ph ph-file-text"></i> Detalle de Presupuesto Oficial</h3>
+                <button onclick="document.getElementById('modal-presupuesto').style.display='none'" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="ph ph-x"></i></button>
+            </div>
+            <input type="hidden" id="modal_orden_id">
+            
+            <div style="background: var(--bg-body); padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid var(--border-color);">
+                <label>1. Agregar Ítem (Desde Catálogo)</label>
+                <select id="select_catalogo" onchange="seleccionarServicioPreCargado()" style="margin-bottom: 15px;"></select>
+                <label>2. Detalles del Nuevo Ítem</label>
+                <div class="row" style="align-items: flex-end;">
+                    <div class="col" style="flex: 2;"><input type="text" id="item_desc" style="margin:0;" placeholder="Descripción"></div>
+                    <div class="col" style="flex: 0.5;"><input type="number" id="item_cant" value="1" style="margin:0;" placeholder="Cant."></div>
+                    <div class="col"><input type="number" id="item_precio" style="margin:0;" placeholder="Precio Unit."></div>
+                    <button class="btn-success" onclick="agregarItemPresupuesto()"><i class="ph ph-plus"></i></button>
+                </div>
+            </div>
+            
+            <ul class="lista-items" id="lista_items_orden"></ul>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <h3 style="margin: 0; font-size: 1.5rem;">Total: <span style="color: var(--primary);">$<span id="modal_total">0.00</span></span></h3>
+                <button class="btn-primary" onclick="generarPDFOficial()"><i class="ph ph-printer"></i> Imprimir Oficial</button>
+            </div>
+        </div>
+    </div>
     
     <div id="modal-cobrar" class="modal-overlay"><div class="modal-content" style="width: 400px; text-align: center;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h3 style="margin: 0; color: var(--dark); font-size: 1.3rem;"><i class="ph ph-currency-circle-dollar"></i> Cobrar y Entregar</h3><button onclick="document.getElementById('modal-cobrar').style.display='none'" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="ph ph-x"></i></button></div><p style="margin-bottom: 5px;">Vehículo: <strong id="cobro_patente"></strong></p><h2 style="color: var(--success); font-size: 3rem; margin: 10px 0;">$<span id="cobro_total">0</span></h2><input type="hidden" id="cobro_orden_id"><input type="hidden" id="cobro_monto_raw"><div style="text-align: left; margin-bottom: 25px;"><label>Método de Pago</label><select id="cobro_metodo" style="margin-bottom: 0;"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia / MercadoPago</option></select></div><button class="btn-success" style="width: 100%; padding: 15px; font-size: 1.1rem;" onclick="procesarCobroOrden()"><i class="ph ph-check-circle"></i> Confirmar Pago e Ingresar a Caja</button></div></div>
-
     <div id="modal-imprimir-qr" class="modal-overlay"><div class="modal-content" style="width: 400px; text-align: center;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h3 style="margin: 0; color: var(--dark); font-size: 1.3rem;" id="qr_titulo_modal">Cartel QR</h3><button onclick="document.getElementById('modal-imprimir-qr').style.display='none'" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="ph ph-x"></i></button></div><p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Imprima y pegue en <strong id="nombre_box_imprimir" style="color:var(--dark)"></strong>.</p><div id="contenedor-codigo-qr" style="display: flex; justify-content: center; margin-bottom: 30px; padding: 20px; background: white; border: 2px dashed var(--border-color); border-radius: 8px;"></div><input type="hidden" id="qr_tipo_impresion"><button class="btn-primary" style="width: 100%;" onclick="imprimirCartelQR()"><i class="ph ph-printer"></i> Imprimir Cartel A4</button></div></div>
 
     <script>
@@ -329,6 +412,58 @@
         let chartFinanzas = null;
         window.clientesCRMGlobal = [];
         window.empleadosGlobal = [];
+        window.todasLasMarcasGlobales = []; // Para el buscador inteligente
+
+        // --- RUTEO MÓVIL AUTOMÁTICO ---
+        async function detectarVistasMoviles() { 
+            const urlParams = new URLSearchParams(window.location.search); 
+            const boxAsignado = urlParams.get('box'); 
+            const esFichada = urlParams.get('fichar'); 
+            if (boxAsignado) { 
+                document.getElementById('app-escritorio').style.display = 'none'; 
+                document.getElementById('pantalla-mecanico').style.display = 'flex'; 
+                document.getElementById('mecanico_nombre_box').innerText = boxAsignado; 
+                try { 
+                    const res = await fetch('/api/ordenes/'); 
+                    const ordenes = await res.json(); 
+                    const ordenEnEsteBox = ordenes.find(o => o.estado === 'En Box' && o.ubicacion === boxAsignado); 
+                    if (ordenEnEsteBox) { 
+                        document.getElementById('mecanico_panel_espera').style.display = 'none'; 
+                        document.getElementById('mecanico_panel_trabajo').style.display = 'block'; 
+                        document.getElementById('mecanico_auto_trabajando').innerText = `${ordenEnEsteBox.patente} | ${ordenEnEsteBox.vehiculo_desc}`; 
+                        document.getElementById('mecanico_orden_activa').value = ordenEnEsteBox.id; 
+                        cargarItemsMecanico(ordenEnEsteBox.id); 
+                    } else { 
+                        document.getElementById('mecanico_panel_espera').style.display = 'block'; 
+                        document.getElementById('mecanico_panel_trabajo').style.display = 'none'; 
+                        const selectEspera = document.getElementById('mecanico_vehiculo_espera'); 
+                        selectEspera.innerHTML = '<option value="">-- Seleccione el Vehículo --</option>'; 
+                        let hayAutos = false; 
+                        ordenes.forEach(o => { 
+                            if (o.estado === 'Turno Asignado') { 
+                                hayAutos = true; selectEspera.innerHTML += `<option value="${o.id}">${o.patente} | ${o.vehiculo_desc} (${o.falla || o.descripcion_falla || '-'})</option>`; 
+                            } 
+                        }); 
+                        if(!hayAutos) selectEspera.innerHTML = '<option value="">(No hay autos en espera)</option>'; 
+                    } 
+                } catch(e) {} 
+            } else if (esFichada === 'true') { 
+                document.getElementById('app-escritorio').style.display = 'none'; 
+                document.getElementById('pantalla-fichada').style.display = 'flex'; 
+            } else { 
+                cargarCatalogoYBoxes(); cargarConfiguracion(); cargarDatosGlobales(); cargarMarcasDesdeAPI(); 
+                
+                // SISTEMA DE RECARGA AUTOMATICA (Cada 15 segundos)
+                setInterval(() => {
+                    if(document.getElementById('sec-taller').classList.contains('active') || document.getElementById('sec-dashboard').classList.contains('active')) {
+                        cargarTablero();
+                    }
+                    if(document.getElementById('sec-dashboard').classList.contains('active')){
+                        cargarPresentesDashboard();
+                    }
+                }, 15000);
+            } 
+        }
 
         // --- SISTEMA DE CATÁLOGO Y BOXES ---
         let catalogoGlobal = []; let boxesGlobal = []; let indexEditandoCatalogo = -1;
@@ -336,125 +471,141 @@
         function renderizarCatalogoAdmin() { const tbody = document.getElementById('lista_catalogo_admin'); tbody.innerHTML = ''; if(catalogoGlobal.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:gray;">Agregue servicios al catálogo para empezar.</td></tr>'; return;} catalogoGlobal.forEach((serv, index) => { tbody.innerHTML += `<tr><td style="color:var(--text-muted);">${serv.categoria}</td><td style="font-weight:600;">${serv.nombre}</td><td style="text-align:right; font-weight:700;">$${serv.precio.toLocaleString('es-AR')}</td><td style="text-align:center; min-width: 80px;"><button onclick="iniciarEdicionCatalogo(${index})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:1.2rem; margin-right:8px;"><i class="ph ph-pencil-simple"></i></button><button onclick="eliminarServicio(${index})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem;"><i class="ph ph-trash"></i></button></td></tr>`; }); actualizarSelectsDePresupuesto(); }
         function iniciarEdicionCatalogo(index) { const serv = catalogoGlobal[index]; document.getElementById('cat_categoria').value = serv.categoria; document.getElementById('cat_nombre').value = serv.nombre; document.getElementById('cat_precio').value = serv.precio; indexEditandoCatalogo = index; document.getElementById('btn_guardar_catalogo').innerHTML = '<i class="ph ph-floppy-disk"></i> Guardar Cambios'; document.getElementById('btn_guardar_catalogo').classList.replace('btn-primary', 'btn-success'); document.getElementById('btn_cancelar_edicion').style.display = 'block'; document.getElementById('formCatalogoConfig').scrollIntoView({ behavior: 'smooth' }); }
         function cancelarEdicionCatalogo() { indexEditandoCatalogo = -1; document.getElementById('formCatalogoConfig').reset(); document.getElementById('btn_guardar_catalogo').innerHTML = '<i class="ph ph-plus"></i> Agregar Nuevo'; document.getElementById('btn_guardar_catalogo').classList.replace('btn-success', 'btn-primary'); document.getElementById('btn_cancelar_edicion').style.display = 'none'; }
-        document.getElementById('formCatalogoConfig').addEventListener('submit', async (e) => { e.preventDefault(); const payload = { categoria: document.getElementById('cat_categoria').value, nombre: document.getElementById('cat_nombre').value, precio: parseFloat(document.getElementById('cat_precio').value) }; try { if (indexEditandoCatalogo >= 0) { const idServicio = catalogoGlobal[indexEditandoCatalogo].id; await fetch(`/api/gestion/catalogo/${idServicio}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); } else { await fetch(`/api/gestion/catalogo`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); } cancelarEdicionCatalogo(); cargarCatalogoYBoxes(); } catch(e) { alert("Error al guardar.");} });
+        document.getElementById('formCatalogoConfig').addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            const payload = { categoria: document.getElementById('cat_categoria').value, nombre: document.getElementById('cat_nombre').value, precio: parseFloat(document.getElementById('cat_precio').value) }; 
+            try { 
+                let res;
+                if (indexEditandoCatalogo >= 0) { 
+                    const idServicio = catalogoGlobal[indexEditandoCatalogo].id; 
+                    res = await fetch(`/api/gestion/catalogo/${idServicio}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+                } else { 
+                    res = await fetch(`/api/gestion/catalogo`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+                } 
+                if (!res.ok) throw new Error(await res.text());
+                cancelarEdicionCatalogo(); 
+                cargarCatalogoYBoxes(); 
+            } catch(e) { alert("Error al guardar: " + e.message); } 
+        });
         async function eliminarServicio(index) { if(confirm("¿Seguro que desea eliminar este servicio?")) { try { const idServicio = catalogoGlobal[index].id; await fetch(`/api/gestion/catalogo/${idServicio}`, { method: 'DELETE' }); cargarCatalogoYBoxes(); } catch(e) {} } }
         function actualizarSelectsDePresupuesto() { const selects = [document.getElementById('select_catalogo'), document.getElementById('select_catalogo_rapido')]; const agrupado = {}; catalogoGlobal.forEach(s => { if(!agrupado[s.categoria]) agrupado[s.categoria] = []; agrupado[s.categoria].push(s); }); selects.forEach(select => { if(!select) return; select.innerHTML = '<option value="">-- Seleccionar o Escribir Manual --</option>'; for (const [cat, servs] of Object.entries(agrupado)) { let optgroup = document.createElement('optgroup'); optgroup.label = cat; servs.forEach(s => { let opt = document.createElement('option'); opt.value = JSON.stringify(s); opt.textContent = `${s.nombre} - $${s.precio.toLocaleString('es-AR')}`; optgroup.appendChild(opt); }); select.appendChild(optgroup); } }); }
 
-        function renderizarBoxesAdmin() { const tbody = document.getElementById('lista_boxes_admin'); tbody.innerHTML = ''; if(boxesGlobal.length===0){ tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:gray;">Agregue un Box para generar QRs.</td></tr>'; return; } boxesGlobal.forEach((box, index) => { tbody.innerHTML += `<tr><td style="font-weight:700; font-size:1.1rem; color:var(--dark);"><i class="ph ph-garage" style="color:var(--primary);"></i> ${box.nombre}</td><td style="text-align:center;"><button onclick="abrirModalQRBox('${box.nombre}')" class="btn-outline" style="padding:8px 12px; margin-right:10px;"><i class="ph ph-qr-code"></i> QR</button><button onclick="eliminarBox(${index})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem;"><i class="ph ph-trash"></i></button></td></tr>`; }); }
-        document.getElementById('formBoxesConfig').addEventListener('submit', async (e) => { e.preventDefault(); try { await fetch(`/api/gestion/boxes`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nombre: document.getElementById('box_nombre_crear').value }) }); document.getElementById('formBoxesConfig').reset(); cargarCatalogoYBoxes(); cargarTablero(); } catch(e) {} });
+        function renderizarBoxesAdmin() { const tbody = document.getElementById('lista_boxes_admin'); tbody.innerHTML = ''; if(boxesGlobal.length===0){ tbody.innerHTML = '<tr><td colspan=\"2\" style=\"text-align:center; color:gray;\">Agregue un Box para generar QRs.</td></tr>'; return; } boxesGlobal.forEach((box, index) => { tbody.innerHTML += `<tr><td style=\"font-weight:700; font-size:1.1rem; color:var(--dark);\"><i class=\"ph ph-garage\" style=\"color:var(--primary);\"></i> ${box.nombre}</td><td style=\"text-align:center;\"><button onclick=\"abrirModalQRBox('${box.nombre}')\" class=\"btn-outline\" style=\"padding:8px 12px; margin-right:10px;\"><i class=\"ph ph-qr-code\"></i> QR</button><button onclick=\"eliminarBox(${index})\" style=\"background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem;\"><i class=\"ph ph-trash\"></i></button></td></tr>`; }); }
+        document.getElementById('formBoxesConfig').addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            try { 
+                const res = await fetch(`/api/gestion/boxes`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nombre: document.getElementById('box_nombre_crear').value }) }); 
+                if (!res.ok) throw new Error(await res.text());
+                document.getElementById('formBoxesConfig').reset(); 
+                cargarCatalogoYBoxes(); 
+                cargarTablero(); 
+            } catch(e) { alert("Error al guardar Box: " + e.message); } 
+        });
         async function eliminarBox(index) { try{ const idBox = boxesGlobal[index].id; await fetch(`/api/gestion/boxes/${idBox}`, { method: 'DELETE' }); cargarCatalogoYBoxes(); cargarTablero(); } catch(e){} }
         
-        // --- GENERADOR DE QRs INTELIGENTE (TOMA LA IP DE LA RED LOCAL) ---
+        // --- GENERADOR DE QRs INTELIGENTE ---
         let qrCodeActual = null; 
-        function abrirModalQRBox(nombreBox) { 
-            document.getElementById('qr_titulo_modal').innerText = "Cartel QR del Box"; document.getElementById('nombre_box_imprimir').innerText = nombreBox; document.getElementById('qr_tipo_impresion').value = "BOX";
-            const contenedor = document.getElementById('contenedor-codigo-qr'); contenedor.innerHTML = ''; 
-            const urlReal = window.location.origin + "/?box=" + encodeURIComponent(nombreBox); 
-            qrCodeActual = new QRCode(contenedor, { text: urlReal, width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); 
-            document.getElementById('modal-imprimir-qr').style.display = 'flex'; 
-        }
+        function abrirModalQRBox(nombreBox) { document.getElementById('qr_titulo_modal').innerText = "Cartel QR del Box"; document.getElementById('nombre_box_imprimir').innerText = nombreBox; document.getElementById('qr_tipo_impresion').value = "BOX"; const contenedor = document.getElementById('contenedor-codigo-qr'); contenedor.innerHTML = ''; const urlReal = window.location.origin + "/?box=" + encodeURIComponent(nombreBox); qrCodeActual = new QRCode(contenedor, { text: urlReal, width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('modal-imprimir-qr').style.display = 'flex'; }
+        function abrirModalQRGeneral() { document.getElementById('qr_titulo_modal').innerText = "QR Asistencia Personal"; document.getElementById('nombre_box_imprimir').innerText = "La Puerta de Entrada del Taller"; document.getElementById('qr_tipo_impresion').value = "ASISTENCIA"; const contenedor = document.getElementById('contenedor-codigo-qr'); contenedor.innerHTML = ''; const urlReal = window.location.origin + "/?fichar=true"; qrCodeActual = new QRCode(contenedor, { text: urlReal, width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('modal-imprimir-qr').style.display = 'flex'; }
+        function imprimirCartelQR() { const tipo = document.getElementById('qr_tipo_impresion').value; const nombre = document.getElementById('nombre_box_imprimir').innerText; const imgBase64 = document.querySelector('#contenedor-codigo-qr img').src; let htmlCartel = ""; if (tipo === "BOX") { htmlCartel = `<!DOCTYPE html><html><head><title>QR Box</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>${nombre}</h1><h2>3D RACER - ÁREA DE TRABAJO</h2><img src="${imgBase64}"><p>MECÁNICO: ESCANEE ESTE CÓDIGO CON SU CELULAR PARA INGRESAR EL VEHÍCULO A ESTE BOX</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`; } else { htmlCartel = `<!DOCTYPE html><html><head><title>QR Asistencia</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>CONTROL DE ASISTENCIA</h1><h2>TALLER 3D RACER</h2><img src="${imgBase64}"><p>PERSONAL: ESCANEE ESTE CÓDIGO CON SU CELULAR AL INGRESAR Y AL RETIRARSE</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`; } const ventana = window.open('', '_blank'); ventana.document.write(htmlCartel); ventana.document.close(); document.getElementById('modal-imprimir-qr').style.display = 'none'; }
 
-        function abrirModalQRGeneral() { 
-            document.getElementById('qr_titulo_modal').innerText = "QR Asistencia Personal"; document.getElementById('nombre_box_imprimir').innerText = "La Puerta de Entrada del Taller"; document.getElementById('qr_tipo_impresion').value = "ASISTENCIA";
-            const contenedor = document.getElementById('contenedor-codigo-qr'); contenedor.innerHTML = ''; 
-            const urlReal = window.location.origin + "/?fichar=true"; 
-            qrCodeActual = new QRCode(contenedor, { text: urlReal, width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); 
-            document.getElementById('modal-imprimir-qr').style.display = 'flex'; 
-        }
-
-        function imprimirCartelQR() { 
-            const tipo = document.getElementById('qr_tipo_impresion').value; const nombre = document.getElementById('nombre_box_imprimir').innerText; const imgBase64 = document.querySelector('#contenedor-codigo-qr img').src; let htmlCartel = "";
-            if (tipo === "BOX") { htmlCartel = `<!DOCTYPE html><html><head><title>QR Box</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>${nombre}</h1><h2>3D RACER - ÁREA DE TRABAJO</h2><img src="${imgBase64}"><p>MECÁNICO: ESCANEE ESTE CÓDIGO CON SU CELULAR PARA INGRESAR EL VEHÍCULO A ESTE BOX</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`; } 
-            else { htmlCartel = `<!DOCTYPE html><html><head><title>QR Asistencia</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>CONTROL DE ASISTENCIA</h1><h2>TALLER 3D RACER</h2><img src="${imgBase64}"><p>PERSONAL: ESCANEE ESTE CÓDIGO CON SU CELULAR AL INGRESAR Y AL RETIRARSE</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`; }
-            const ventana = window.open('', '_blank'); ventana.document.write(htmlCartel); ventana.document.close(); document.getElementById('modal-imprimir-qr').style.display = 'none'; 
-        }
-
-        // --- HISTORIAL DE CLIENTES (CRM) CON BUSCADOR A PRUEBA DE FALLOS ---
-        async function cargarClientesCRM() {
-            try {
-                const res = await fetch('/api/clientes/'); if(!res.ok) throw new Error(); 
-                window.clientesCRMGlobal = await res.json(); renderizarListaCRM(window.clientesCRMGlobal);
-            } catch(e) { console.error("Error CRM."); }
-        }
-        function filtrarCRM() {
-            const texto = document.getElementById('buscador_crm').value.toLowerCase(); if(!window.clientesCRMGlobal) return;
-            const filtrados = window.clientesCRMGlobal.filter(c => c.nombre.toLowerCase().includes(texto) || (c.telefono && c.telefono.toLowerCase().includes(texto)) );
-            renderizarListaCRM(filtrados);
-        }
-        function renderizarListaCRM(lista) {
-            const tbody = document.getElementById('lista_clientes_crm'); tbody.innerHTML = '';
-            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:gray; padding: 20px;">No se encontraron clientes.</td></tr>'; return; }
-            lista.forEach(c => { tbody.innerHTML += `<tr><td><strong>${c.nombre}</strong><br><span style="color:gray; font-size:0.8rem;">Tel: ${c.telefono||'N/A'}</span></td><td style="text-align:right;"><button class="btn-dark" style="padding: 5px 15px;" onclick="verHistorialCliente(${c.id}, '${c.nombre}')"><i class="ph ph-file-search"></i> Ver Ficha</button></td></tr>`; });
-        }
-        async function verHistorialCliente(idCliente, nombreCliente) {
-            document.getElementById('crm_nombre_cliente').innerText = nombreCliente;
-            const divHistorial = document.getElementById('crm_historial_datos');
-            divHistorial.innerHTML = '<div style="text-align:center; padding:20px;"><i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i></div>';
-            try {
-                const resV = await fetch('/api/vehiculos/'); const vehiculos = await resV.json();
-                const misVehiculos = vehiculos.filter(v => v.cliente_id == idCliente);
-                const resO = await fetch('/api/ordenes/'); const ordenes = await resO.json();
-                divHistorial.innerHTML = '';
-                if(misVehiculos.length === 0) { divHistorial.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">Este cliente no tiene vehículos registrados.</p>'; return; }
-                misVehiculos.forEach(v => {
-                    let html = `<div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; overflow: hidden;"><div style="background: var(--dark); color: white; padding: 12px 20px; font-weight: 700; display:flex; justify-content:space-between;"><span>${v.marca} ${v.modelo}</span> <span>Patente: <span style="color:var(--primary);">${v.patente}</span></span></div><ul style="list-style:none; padding:0; margin:0;">`;
-                    const misOrdenes = ordenes.filter(o => o.vehiculo_id == v.id); 
-                    if(misOrdenes.length === 0) html += `<li style="padding: 15px; color: gray; text-align: center;">Sin ingresos al taller aún.</li>`;
-                    misOrdenes.forEach(o => {
-                        const colorEst = o.estado === 'Entregado' ? 'color:var(--primary);' : (o.estado === 'Terminado' ? 'color:var(--success);' : 'color:var(--warning);');
-                        html += `<li style="padding: 15px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;"><div><strong style="color:var(--dark-blue);">${o.falla}</strong><br><span style="font-size:0.85rem; color:gray;">Fecha ingreso: ${new Date(o.fecha_ingreso || Date.now()).toLocaleDateString('es-AR')}</span></div><div style="font-weight:700; ${colorEst}">${o.estado}</div></li>`;
-                    });
-                    html += `</ul></div>`; divHistorial.innerHTML += html;
-                });
-            } catch(e) { divHistorial.innerHTML = '<p>Error cargando historial de vehículos.</p>'; }
-        }
-
-        // --- RUTEO MÓVIL AUTOMÁTICO (BOX vs FICHADA) ---
-        async function detectarVistasMoviles() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const boxAsignado = urlParams.get('box');
-            const esFichada = urlParams.get('fichar');
-            
-            if (boxAsignado) {
-                // VISTA MECANICO BOX
-                document.getElementById('app-escritorio').style.display = 'none'; document.getElementById('pantalla-mecanico').style.display = 'flex'; document.getElementById('mecanico_nombre_box').innerText = boxAsignado;
-                try {
-                    const res = await fetch('/api/ordenes/'); const ordenes = await res.json();
-                    const ordenEnEsteBox = ordenes.find(o => o.estado === 'En Box' && o.ubicacion === boxAsignado);
-                    if (ordenEnEsteBox) {
-                        document.getElementById('mecanico_panel_espera').style.display = 'none'; document.getElementById('mecanico_panel_trabajo').style.display = 'block'; document.getElementById('mecanico_auto_trabajando').innerText = `${ordenEnEsteBox.patente} | ${ordenEnEsteBox.vehiculo_desc}`; document.getElementById('mecanico_orden_activa').value = ordenEnEsteBox.id; cargarItemsMecanico(ordenEnEsteBox.id);
-                    } else {
-                        document.getElementById('mecanico_panel_espera').style.display = 'block'; document.getElementById('mecanico_panel_trabajo').style.display = 'none';
-                        const selectEspera = document.getElementById('mecanico_vehiculo_espera'); selectEspera.innerHTML = '<option value="">-- Seleccione el Vehículo --</option>'; let hayAutos = false;
-                        ordenes.forEach(o => { if (o.estado === 'Turno Asignado') { hayAutos = true; selectEspera.innerHTML += `<option value="${o.id}">${o.patente} | ${o.vehiculo_desc} (${o.falla})</option>`; } });
-                        if(!hayAutos) selectEspera.innerHTML = '<option value="">(No hay autos en espera)</option>';
-                    }
-                } catch(e) {}
-            } else if (esFichada === 'true') {
-                // VISTA FICHADA PUERTA TALLER
-                document.getElementById('app-escritorio').style.display = 'none'; document.getElementById('pantalla-fichada').style.display = 'flex';
-            } else {
-                // VISTA PC ADMINISTRADOR
-                cargarCatalogoYBoxes(); cargarConfiguracion(); cargarDatosGlobales(); cargarMarcasDesdeAPI();
-            }
-        }
-
-        async function mecanicoIngresarVehiculo() { const idOrden = document.getElementById('mecanico_vehiculo_espera').value; const nombreBox = document.getElementById('mecanico_nombre_box').innerText; if(!idOrden) { alert("Seleccione un vehículo."); return; } try { await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'En Box', ubicacion: nombreBox }) }); detectarVistasMoviles(); } catch(e) {} }
+        // --- CRM Y CLINICO MEJORADO ---
+        async function cargarClientesCRM() { try { const res = await fetch('/api/clientes/'); if(!res.ok) throw new Error(); window.clientesCRMGlobal = await res.json(); renderizarListaCRM(window.clientesCRMGlobal); } catch(e) { console.error("Error CRM."); } }
+        function filtrarCRM() { const texto = document.getElementById('buscador_crm').value.toLowerCase(); if(!window.clientesCRMGlobal) return; const filtrados = window.clientesCRMGlobal.filter(c => c.nombre.toLowerCase().includes(texto) || (c.telefono && c.telefono.toLowerCase().includes(texto)) ); renderizarListaCRM(filtrados); }
+        function renderizarListaCRM(lista) { const tbody = document.getElementById('lista_clientes_crm'); tbody.innerHTML = ''; if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan=\"2\" style=\"text-align:center; color:gray; padding: 20px;\">No se encontraron clientes.</td></tr>'; return; } lista.forEach(c => { tbody.innerHTML += `<tr><td><strong>${c.nombre}</strong><br><span style=\"color:gray; font-size:0.8rem;\">Tel: ${c.telefono||'N/A'}</span></td><td style=\"text-align:right;\"><button class=\"btn-dark\" style=\"padding: 5px 15px;\" onclick=\"verHistorialCliente(${c.id}, '${c.nombre}')\"><i class=\"ph ph-file-search\"></i> Ver Ficha</button></td></tr>`; }); }
         
-        async function mecanicoAgregarRepuesto() { 
-            const idOrden = document.getElementById('mecanico_orden_activa').value; const desc = document.getElementById('mec_item_desc').value; const cant = document.getElementById('mec_item_cant').value; const notas = document.getElementById('mec_item_notas').value;
-            if(!desc) { alert("Debe escribir una descripción."); return; }
-            const descripcionFinal = notas ? `${desc} (Notas: ${notas})` : desc;
-            await fetch(`/api/ordenes/${idOrden}/detalles`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ descripcion: descripcionFinal, cantidad: parseInt(cant), precio_unitario: 0 }) }); 
-            document.getElementById('mec_item_desc').value = ''; document.getElementById('mec_item_cant').value = '1'; document.getElementById('mec_item_notas').value = ''; cargarItemsMecanico(idOrden); 
+        async function verHistorialCliente(idCliente, nombreCliente) { 
+            document.getElementById('crm_nombre_cliente').innerText = nombreCliente; 
+            const divHistorial = document.getElementById('crm_historial_datos'); 
+            divHistorial.innerHTML = '<div style="text-align:center; padding:20px;"><i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i></div>'; 
+            try { 
+                const resV = await fetch('/api/vehiculos/'); 
+                const vehiculos = await resV.json(); 
+                const misVehiculos = vehiculos.filter(v => parseInt(v.cliente_id) === parseInt(idCliente)); 
+                
+                const resO = await fetch('/api/ordenes/'); 
+                const ordenes = await resO.json(); 
+                
+                divHistorial.innerHTML = ''; 
+                if(misVehiculos.length === 0) { 
+                    divHistorial.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">Este cliente no tiene vehículos registrados.</p>'; 
+                    return; 
+                } 
+                
+                // Usamos un bucle for...of para poder buscar los detalles de cada orden
+                for (const v of misVehiculos) { 
+                    let html = `<div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; overflow: hidden;"><div style="background: var(--dark); color: white; padding: 12px 20px; font-weight: 700; display:flex; justify-content:space-between;"><span>${v.marca} ${v.modelo}</span> <span>Patente: <span style="color:var(--primary);">${v.patente}</span></span></div><ul style="list-style:none; padding:0; margin:0;">`; 
+                    
+                    const misOrdenes = ordenes.filter(o => parseInt(o.vehiculo_id) === parseInt(v.id)); 
+                    
+                    if(misOrdenes.length === 0) {
+                        html += `<li style="padding: 15px; color: gray; text-align: center;">Sin ingresos al taller aún.</li>`; 
+                    } else {
+                        for (const o of misOrdenes) { 
+                            const descripcion_falla = o.falla || o.descripcion_falla || 'Sin detalles registrados';
+                            const colorEst = o.estado === 'Entregado' ? 'color:var(--primary);' : (o.estado === 'Terminado' ? 'color:var(--success);' : 'color:var(--warning);'); 
+                            const fechaFormateada = o.fecha_ingreso ? new Date(o.fecha_ingreso).toLocaleDateString('es-AR') : 'Fecha Desconocida';
+                            
+                            // BUSCAR LOS TRABAJOS (DETALLES) DE ESTE INGRESO
+                            let listaTrabajos = "";
+                            try {
+                                const resDetalles = await fetch(`/api/ordenes/${o.id}/detalles`);
+                                const detalles = await resDetalles.json();
+                                if(detalles.length > 0) {
+                                    listaTrabajos = `<ul style="margin-top: 10px; padding-left: 20px; font-size: 0.9rem; color: var(--text-muted);">`;
+                                    detalles.forEach(d => {
+                                        listaTrabajos += `<li><strong style="color:var(--text-main);">${d.cantidad}x</strong> ${d.descripcion}</li>`;
+                                    });
+                                    listaTrabajos += `</ul>`;
+                                } else {
+                                    listaTrabajos = `<p style="margin-top: 10px; font-size: 0.85rem; color: gray; font-style: italic;">Sin trabajos anotados en el presupuesto.</p>`;
+                                }
+                            } catch(e) {}
+                            
+                            html += `<li style="padding: 15px; border-bottom: 1px solid var(--border-color); display:flex; flex-direction:column; justify-content:center;">
+                                <div style="display:flex; justify-content:space-between; width:100%;">
+                                    <div><strong style="color:var(--text-main);">${descripcion_falla}</strong><br><span style="font-size:0.85rem; color:gray;">Fecha ingreso: ${fechaFormateada}</span></div>
+                                    <div style="font-weight:700; ${colorEst}">${o.estado}</div>
+                                </div>
+                                ${listaTrabajos}
+                            </li>`; 
+                        }
+                    }
+                    html += `</ul></div>`; 
+                    divHistorial.innerHTML += html; 
+                } 
+            } catch(e) { 
+                divHistorial.innerHTML = '<p style="padding:20px; color:red; text-align:center;">Error cargando historial.</p>'; 
+            } 
         }
 
-        async function cargarItemsMecanico(id_orden) { 
-            const res = await fetch(`/api/ordenes/${id_orden}/detalles`); const det = await res.json(); 
-            const lista = document.getElementById('mecanico_lista_items'); lista.innerHTML = ''; 
-            if(det.length === 0) lista.innerHTML = '<p style="color:gray; font-size:0.9rem;">Sin trabajos anotados aún.</p>'; 
-            det.forEach(i => { lista.innerHTML += `<div class="mec-item"><div class="mec-item-header"><span>${i.descripcion}</span><span style="color:var(--primary);">x${i.cantidad}</span></div></div>`; }); 
+        // --- FLUJO DEL MECANICO ---
+        async function mecanicoIngresarVehiculo() { const idOrden = document.getElementById('mecanico_vehiculo_espera').value; const nombreBox = document.getElementById('mecanico_nombre_box').innerText; if(!idOrden) { alert("Seleccione un vehículo."); return; } try { await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'En Box', ubicacion: nombreBox }) }); detectarVistasMoviles(); } catch(e) {} }
+        async function mecanicoAgregarRepuesto() { 
+            const idOrden = document.getElementById('mecanico_orden_activa').value; 
+            const tipo = document.getElementById('mec_item_tipo').value;
+            const desc = document.getElementById('mec_item_desc').value; 
+            const cant = document.getElementById('mec_item_cant').value; 
+            const notas = document.getElementById('mec_item_notas').value;
+            
+            if(!desc) { alert("Debe escribir una descripción."); return; }
+            
+            const prefijo = tipo === 'REPUESTO' ? '📦 [Repuesto]' : '🔧 [Mano de Obra]';
+            const descripcionFinal = notas ? `${prefijo} ${desc} (Notas: ${notas})` : `${prefijo} ${desc}`;
+            
+            try {
+                await fetch(`/api/ordenes/${idOrden}/detalles`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ descripcion: descripcionFinal, cantidad: parseInt(cant), precio_unitario: 0 }) 
+                }); 
+                document.getElementById('mec_item_desc').value = ''; 
+                document.getElementById('mec_item_cant').value = '1'; 
+                document.getElementById('mec_item_notas').value = ''; 
+                cargarItemsMecanico(idOrden); 
+            } catch(e) { alert("Error al cargar el ítem."); }
         }
+        async function cargarItemsMecanico(id_orden) { const res = await fetch(`/api/ordenes/${id_orden}/detalles`); const det = await res.json(); const lista = document.getElementById('mecanico_lista_items'); lista.innerHTML = ''; if(det.length === 0) lista.innerHTML = '<p style=\"color:gray; font-size:0.9rem;\">Sin trabajos anotados aún.</p>'; det.forEach(i => { lista.innerHTML += `<div class=\"mec-item\"><div class=\"mec-item-header\"><span>${i.descripcion}</span><span style=\"color:var(--primary);\">x${i.cantidad}</span></div></div>`; }); }
         async function mecanicoTerminarTrabajo() { const idOrden = document.getElementById('mecanico_orden_activa').value; if(confirm("¿Seguro que terminaste de trabajar en este auto? Se sacará del box.")) { await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'Terminado', ubicacion: 'Playa' }) }); alert("Trabajo Terminado. El administrador fue notificado."); detectarVistasMoviles(); } }
 
         // --- SISTEMA INSTITUCIONAL E INICIO ---
@@ -465,10 +616,45 @@
         if (localStorage.getItem('modo_oscuro') === 'true') document.body.classList.add('dark-mode');
         document.getElementById('input_logo').addEventListener('change', function(e) { const archivo = e.target.files[0]; if (archivo) { const reader = new FileReader(); reader.onload = function(ev) { logoBase64Actual = ev.target.result; document.getElementById('preview_logo').src = logoBase64Actual; document.getElementById('preview_logo').style.display = 'block'; }; reader.readAsDataURL(archivo); } });
 
-        async function cargarConfiguracion() { try { const res = await fetch('/api/configuracion/'); if(!res.ok) return; const config = await res.json(); const nombreTaller = config.nombre_taller || "Nombre No Configurado"; document.getElementById('conf_nombre').value = config.nombre_taller || ''; document.getElementById('conf_direccion').value = config.direccion || ''; document.getElementById('conf_telefono').value = config.telefono || ''; document.getElementById('conf_email').value = config.email || ''; document.getElementById('splash-nombre-taller').innerText = nombreTaller; document.getElementById('menu-nombre-taller').innerText = nombreTaller; document.getElementById('titulo-pestana').innerText = nombreTaller + " | Gestión"; if (config.logo_b64) { logoBase64Actual = config.logo_b64; document.getElementById('preview_logo').src = config.logo_b64; document.getElementById('preview_logo').style.display = 'block'; document.getElementById('menu-logo').src = config.logo_b64; document.getElementById('menu-logo').style.display = 'block'; document.getElementById('splash-logo').src = config.logo_b64; document.getElementById('splash-logo').style.display = 'block'; } } catch(e) { console.warn("No se pudo cargar la configuración (Posiblemente Python apagado)"); } }
-        async function guardarConfiguracion() { try { const datos = { nombre_taller: document.getElementById('conf_nombre').value, direccion: document.getElementById('conf_direccion').value, telefono: document.getElementById('conf_telefono').value, email: document.getElementById('conf_email').value, logo_b64: logoBase64Actual }; const res = await fetch('/api/configuracion/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) }); if (res.ok) { alert("¡Configuración guardada en la Base de Datos!"); cargarConfiguracion(); } } catch (e) { alert("Error: No se pudo conectar con el servidor.");} }
+        async function cargarConfiguracion() { 
+            try { 
+                const res = await fetch('/api/configuracion/'); 
+                if(!res.ok) return; 
+                const config = await res.json(); 
+                if (!config || Object.keys(config).length === 0) return; 
+                
+                const nombreTaller = config.nombre_taller || "Nombre No Configurado"; 
+                document.getElementById('conf_nombre').value = config.nombre_taller || ''; 
+                document.getElementById('conf_direccion').value = config.direccion || ''; 
+                document.getElementById('conf_telefono').value = config.telefono || ''; 
+                document.getElementById('conf_email').value = config.email || ''; 
+                document.getElementById('splash-nombre-taller').innerText = nombreTaller; 
+                document.getElementById('menu-nombre-taller').innerText = nombreTaller; 
+                document.getElementById('titulo-pestana').innerText = nombreTaller + " | Gestión"; 
+                
+                if (config.logo_b64) { 
+                    logoBase64Actual = config.logo_b64; 
+                    document.getElementById('preview_logo').src = config.logo_b64; 
+                    document.getElementById('preview_logo').style.display = 'block'; 
+                    document.getElementById('menu-logo').src = config.logo_b64; 
+                    document.getElementById('menu-logo').style.display = 'block'; 
+                    document.getElementById('splash-logo').src = config.logo_b64; 
+                    document.getElementById('splash-logo').style.display = 'block'; 
+                } 
+            } catch(e) { console.warn("Aún no hay configuración guardada."); } 
+        }
 
-        // --- SISTEMA GENERAL Y DB (CON MÉTRICAS) ---
+        async function guardarConfiguracion() { 
+            try { 
+                const datos = { nombre_taller: document.getElementById('conf_nombre').value, direccion: document.getElementById('conf_direccion').value, telefono: document.getElementById('conf_telefono').value, email: document.getElementById('conf_email').value, logo_b64: logoBase64Actual }; 
+                const res = await fetch('/api/configuracion/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) }); 
+                if (!res.ok) throw new Error(await res.text());
+                alert("✅ ¡Configuración Institucional guardada!"); 
+                cargarConfiguracion(); 
+            } catch (e) { alert("Error al guardar la configuración: " + e.message);} 
+        }
+
+        // --- SISTEMA GENERAL Y DB ---
         async function cargarDatosGlobales() {
             try {
                 const resC = await fetch('/api/clientes/'); if (!resC.ok) throw new Error("DB apagada");
@@ -477,47 +663,130 @@
                 vehiculosLocales = vehiculos; actualizarListaMarcas();      
                 document.getElementById('vehiculo_orden').innerHTML = '<option value="">Seleccione...</option>'; vehiculos.forEach(v => document.getElementById('vehiculo_orden').innerHTML += `<option value="${v.id}">${v.patente} - ${v.marca} ${v.modelo}</option>`);
                 cargarTablero(); cargarCaja(); cargarEmpleados(); cargarPresentesDashboard();
-            } catch(e) { console.error("🚨 Falla crítica:", e); }
+            } catch(e) { console.error("🚨 Falla en datos globales:", e); }
         }
 
         async function cargarTablero() {
             try {
                 const res = await fetch('/api/ordenes/'); if(!res.ok) return; const ordenes = await res.json();
                 document.getElementById('col_espera').innerHTML = ''; document.getElementById('col_box').innerHTML = ''; document.getElementById('col_terminado').innerHTML = '';
-                let cEspera = 0, cBox = 0, cTerm = 0;
-                let opcionesBox = ""; boxesGlobal.forEach(b => { opcionesBox += `<option value="${b.nombre}">${b.nombre}</option>`; });
-
-                // MÉTRICAS DE FASE 3
-                let autosDelMes = 0;
-                const mesActual = new Date().getMonth();
+                let cEspera = 0, cBox = 0, cTerm = 0; let opcionesBox = ""; boxesGlobal.forEach(b => { opcionesBox += `<option value="${b.nombre}">${b.nombre}</option>`; });
+                let autosDelMes = 0; const mesActual = new Date().getMonth();
 
                 ordenes.forEach(orden => {
-                    // Contamos los entregados este mes
                     const fechaOrden = new Date(orden.fecha_ingreso || Date.now());
                     if (fechaOrden.getMonth() === mesActual) autosDelMes++;
 
                     if(orden.estado === 'Entregado') return; 
                     
-                    let html = `<div class="tarjeta-orden"><h5 style="margin: 0 0 10px 0; color: var(--dark); font-size: 1.1rem;">${orden.patente} | ${orden.vehiculo_desc}</h5><p style="margin-bottom: 15px;"><i class="ph ph-warning-circle"></i> ${orden.falla}</p><button class="btn-outline" style="width: 100%; margin-bottom: 15px; border-color: var(--primary); color: var(--primary); font-weight: 600;" onclick='abrirModalPresupuesto(${JSON.stringify(orden)})'><i class="ph ph-file-text" style="font-size: 1.2rem;"></i> Presupuesto Oficial</button><hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 0 0 15px 0;">`;
-                    if (orden.estado === 'Turno Asignado') { cEspera++; html += `<div style="display: flex; gap: 8px;"><select id="sel_box_${orden.id}" style="margin:0; padding:8px; flex: 1.5;">${opcionesBox}</select><button class="btn-dark" style="padding: 8px; flex: 1;" onclick="moverOrden(${orden.id}, 'En Box')"><i class="ph ph-arrow-right"></i></button></div></div>`; document.getElementById('col_espera').innerHTML += html; } 
-                    else if (orden.estado === 'En Box') { cBox++; html += `<button class="btn-success" style="width:100%; padding:10px;" onclick="moverOrden(${orden.id}, 'Terminado', 'Playa')"><i class="ph ph-check-circle"></i> Terminar Trabajo</button></div>`; document.getElementById('col_box').innerHTML += html; } 
-                    else if (orden.estado === 'Terminado') { cTerm++; html += `<button class="btn-success" style="width:100%; padding:10px; background-color: var(--dark);" onclick="abrirModalCobrar(${orden.id}, '${orden.patente}')"><i class="ph ph-currency-circle-dollar"></i> Cobrar y Entregar</button></div>`; document.getElementById('col_terminado').innerHTML += html; }
+                    let html = `<div class=\"tarjeta-orden\"><h5 style=\"margin: 0 0 10px 0; color: var(--dark); font-size: 1.1rem;\">${orden.patente} | ${orden.vehiculo_desc}</h5><p style=\"margin-bottom: 15px;\"><i class=\"ph ph-warning-circle\"></i> ${orden.falla || orden.descripcion_falla || 'Sin detalles'}</p><button class=\"btn-outline\" style=\"width: 100%; margin-bottom: 15px; border-color: var(--primary); color: var(--primary); font-weight: 600;\" onclick='abrirModalPresupuesto(${JSON.stringify(orden)})'><i class=\"ph ph-file-text\" style=\"font-size: 1.2rem;\"></i> Presupuesto Oficial</button><hr style=\"border: 0; border-top: 1px dashed var(--border-color); margin: 0 0 15px 0;\">`;
+                    if (orden.estado === 'Turno Asignado') { cEspera++; html += `<div style=\"display: flex; gap: 8px;\"><select id=\"sel_box_${orden.id}\" style=\"margin:0; padding:8px; flex: 1.5;\">${opcionesBox}</select><button class=\"btn-dark\" style=\"padding: 8px; flex: 1;\" onclick=\"moverOrden(${orden.id}, 'En Box')\"><i class=\"ph ph-arrow-right\"></i></button></div></div>`; document.getElementById('col_espera').innerHTML += html; } 
+                    else if (orden.estado === 'En Box') { cBox++; html += `<button class=\"btn-success\" style=\"width:100%; padding:10px;\" onclick=\"moverOrden(${orden.id}, 'Terminado', 'Playa')\"><i class=\"ph ph-check-circle\"></i> Terminar Trabajo</button></div>`; document.getElementById('col_box').innerHTML += html; } 
+                    else if (orden.estado === 'Terminado') { cTerm++; html += `<button class=\"btn-success\" style=\"width:100%; padding:10px; background-color: var(--dark);\" onclick=\"abrirModalCobrar(${orden.id}, '${orden.patente}')\"><i class=\"ph ph-currency-circle-dollar\"></i> Cobrar y Entregar</button></div>`; document.getElementById('col_terminado').innerHTML += html; }
                 });
                 
-                document.getElementById('dash-espera').innerText = cEspera; 
-                document.getElementById('dash-box').innerText = cBox; 
-                document.getElementById('dash-terminados').innerText = cTerm;
-                document.getElementById('dash-autos-mes').innerText = autosDelMes;
+                document.getElementById('dash-espera').innerText = cEspera; document.getElementById('dash-box').innerText = cBox; document.getElementById('dash-terminados').innerText = cTerm; document.getElementById('dash-autos-mes').innerText = autosDelMes;
             } catch(e){}
+            calcularMetricasAvanzadas();
         }
 
-        async function guardarIngreso() { let id_dueno = document.getElementById('cliente_id').value; const nuevo_nombre = document.getElementById('nuevo_nombre').value; if (!id_dueno && nuevo_nombre) { const resC = await fetch('/api/clientes/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nombre: nuevo_nombre, telefono: document.getElementById('nuevo_telefono').value})}); const cliente = await resC.json(); id_dueno = cliente.id; } if (!id_dueno) { alert("Seleccione o cree un cliente"); return; } const anioForm = document.getElementById('anio').value; await fetch('/api/vehiculos/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ patente: document.getElementById('patente').value.toUpperCase(), marca: document.getElementById('recepcion_marca').value, modelo: document.getElementById('recepcion_modelo').value, anio: anioForm ? parseInt(anioForm) : null, cliente_id: parseInt(id_dueno)}) }); document.getElementById('formVehiculo').reset(); cargarDatosGlobales(); alert("Vehículo ingresado"); }
-        document.getElementById('formOrden').addEventListener('submit', async (e) => { e.preventDefault(); await fetch('/api/ordenes/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ vehiculo_id: parseInt(document.getElementById('vehiculo_orden').value), descripcion_falla: document.getElementById('falla_orden').value }) }); document.getElementById('formOrden').reset(); cargarTablero(); });
+        async function guardarIngreso() { 
+            try {
+                let id_dueno = document.getElementById('cliente_id').value; 
+                const nuevo_nombre = document.getElementById('nuevo_nombre').value; 
+                if (!id_dueno && nuevo_nombre) { 
+                    const resC = await fetch('/api/clientes/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nombre: nuevo_nombre, telefono: document.getElementById('nuevo_telefono').value})}); 
+                    if (!resC.ok) throw new Error("Error al crear el nuevo cliente.");
+                    const cliente = await resC.json(); 
+                    id_dueno = cliente.id; 
+                } 
+                if (!id_dueno) { alert("⚠️ Debe seleccionar un Cliente Existente o escribir uno Nuevo."); return; } 
+                const anioForm = document.getElementById('anio').value; 
+                const resV = await fetch('/api/vehiculos/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ patente: document.getElementById('patente').value.toUpperCase(), marca: document.getElementById('recepcion_marca').value, modelo: document.getElementById('recepcion_modelo').value, anio: anioForm ? parseInt(anioForm) : null, cliente_id: parseInt(id_dueno)}) }); 
+                if (!resV.ok) throw new Error(await resV.text());
+                document.getElementById('formVehiculo').reset(); 
+                cargarDatosGlobales(); 
+                alert("✅ Vehículo ingresado correctamente a Recepción."); 
+            } catch(e) { alert("Error al guardar vehículo: " + e.message); }
+        }
+
+        document.getElementById('formOrden').addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            try {
+                const res = await fetch('/api/ordenes/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ vehiculo_id: parseInt(document.getElementById('vehiculo_orden').value), descripcion_falla: document.getElementById('falla_orden').value }) }); 
+                if (!res.ok) throw new Error(await res.text());
+                document.getElementById('formOrden').reset(); 
+                alert("✅ Turno generado correctamente. Puede verlo en Espera.");
+                cargarTablero(); 
+            } catch(e) { alert("Error al generar Orden: " + e.message); }
+        });
+
         async function moverOrden(id_orden, estado, ubi = null) { let ubicacion = ubi || document.getElementById(`sel_box_${id_orden}`).value; await fetch(`/api/ordenes/${id_orden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: estado, ubicacion: ubicacion }) }); cargarTablero(); }
 
-        async function cargarMarcasDesdeAPI() { try { const res = await fetch('https://raw.githubusercontent.com/BayronDavid/latam-vehicle-db/main/vehicles_cars.json'); latamCarsDB = await res.json(); if (Array.isArray(latamCarsDB) && latamCarsDB.length > 0) { const claves = Object.keys(latamCarsDB[0]); claveMarcaDetectada = claves.find(k => k.toLowerCase().includes('marc') || k.toLowerCase().includes('mak') || k.toLowerCase().includes('bran')) || claves[0]; claveModeloDetectada = claves.find(k => k.toLowerCase().includes('model') || k.toLowerCase().includes('mod')) || claves[1]; } actualizarListaMarcas(); } catch (e) { } }
-        function actualizarListaMarcas() { let marcasUnicas = new Set(); if (latamCarsDB) { if (!Array.isArray(latamCarsDB) && typeof latamCarsDB === 'object') { Object.keys(latamCarsDB).forEach(m => marcasUnicas.add(m.trim().toUpperCase())); } else if (Array.isArray(latamCarsDB)) { latamCarsDB.forEach(auto => { if (auto[claveMarcaDetectada]) marcasUnicas.add(String(auto[claveMarcaDetectada]).trim().toUpperCase()); }); } } vehiculosLocales.forEach(v => { if (v.marca) marcasUnicas.add(v.marca.trim().toUpperCase()); }); const dlists = ['lista-marcas', 'lista-marcas-recepcion']; dlists.forEach(id => { const el = document.getElementById(id); if (el) { el.innerHTML = ''; [...marcasUnicas].sort().forEach(marca => { el.innerHTML += `<option value="${marca.charAt(0) + marca.slice(1).toLowerCase()}"></option>`; }); } }); }
-        function buscarModelos(idInputMarca, idDatalistDestino) { const inputElement = document.getElementById(idInputMarca); if (!inputElement) return; const marcaElegida = inputElement.value.trim().toUpperCase(); const listaModelos = document.getElementById(idDatalistDestino); if (!listaModelos) return; listaModelos.innerHTML = ''; if (!marcaElegida) return; let modelosUnicos = new Set(); if (latamCarsDB) { if (!Array.isArray(latamCarsDB)) { const claveReal = Object.keys(latamCarsDB).find(k => k.toUpperCase() === marcaElegida); if (claveReal && Array.isArray(latamCarsDB[claveReal])) { latamCarsDB[claveReal].forEach(m => { const mod = typeof m === 'object' ? (m.model || m.modelo || m.name || JSON.stringify(m)) : m; if (mod) modelosUnicos.add(String(mod).trim().toUpperCase()); }); } } else if (Array.isArray(latamCarsDB)) { latamCarsDB.forEach(auto => { const m = String(auto[claveMarcaDetectada] || "").trim().toUpperCase(); if (m === marcaElegida && auto[claveModeloDetectada]) { modelosUnicos.add(String(auto[claveModeloDetectada]).trim().toUpperCase()); } }); } } vehiculosLocales.forEach(v => { if (v.marca && v.marca.trim().toUpperCase() === marcaElegida && v.modelo) { modelosUnicos.add(v.modelo.trim().toUpperCase()); } }); [...modelosUnicos].sort().forEach(modelo => { listaModelos.innerHTML += `<option value="${modelo.charAt(0) + modelo.slice(1).toLowerCase()}"></option>`; }); }
+        // --- BUSCADOR INTELIGENTE DE MARCAS Y MODELOS ---
+        async function cargarMarcasDesdeAPI() { 
+            try { 
+                const res = await fetch('https://raw.githubusercontent.com/BayronDavid/latam-vehicle-db/main/vehicles_cars.json'); 
+                latamCarsDB = await res.json(); 
+                if (Array.isArray(latamCarsDB) && latamCarsDB.length > 0) { 
+                    const claves = Object.keys(latamCarsDB[0]); 
+                    claveMarcaDetectada = claves.find(k => k.toLowerCase().includes('marc') || k.toLowerCase().includes('mak') || k.toLowerCase().includes('bran')) || claves[0]; 
+                    claveModeloDetectada = claves.find(k => k.toLowerCase().includes('model') || k.toLowerCase().includes('mod')) || claves[1]; 
+                } 
+                actualizarListaMarcas(); 
+            } catch (e) { } 
+        }
+        
+        function actualizarListaMarcas() { 
+            let marcasUnicas = new Set(); 
+            if (latamCarsDB) { 
+                if (!Array.isArray(latamCarsDB) && typeof latamCarsDB === 'object') { 
+                    Object.keys(latamCarsDB).forEach(m => marcasUnicas.add(m.trim().toUpperCase())); 
+                } else if (Array.isArray(latamCarsDB)) { 
+                    latamCarsDB.forEach(auto => { if (auto[claveMarcaDetectada]) marcasUnicas.add(String(auto[claveMarcaDetectada]).trim().toUpperCase()); }); 
+                } 
+            } 
+            vehiculosLocales.forEach(v => { if (v.marca) marcasUnicas.add(v.marca.trim().toUpperCase()); }); 
+            window.todasLasMarcasGlobales = [...marcasUnicas].sort();
+        }
+
+        // Esta funcion solo inyecta opciones al datalist cuando escribís 2 letras o más
+        function buscarMarcasDinamico(texto, idDatalistDestino) {
+            const lista = document.getElementById(idDatalistDestino);
+            lista.innerHTML = '';
+            if(texto.length < 2) return;
+            const filtro = texto.toUpperCase();
+            const coincidencias = window.todasLasMarcasGlobales.filter(m => m.includes(filtro)).slice(0, 10);
+            coincidencias.forEach(m => {
+                lista.innerHTML += `<option value="${m.charAt(0) + m.slice(1).toLowerCase()}"></option>`;
+            });
+        }
+        
+        function buscarModelos(marcaIngresada, idDatalistDestino) { 
+            const marcaElegida = marcaIngresada.trim().toUpperCase(); 
+            const listaModelos = document.getElementById(idDatalistDestino); if (!listaModelos) return; 
+            listaModelos.innerHTML = ''; if (!marcaElegida) return; 
+            let modelosUnicos = new Set(); 
+            if (latamCarsDB) { 
+                if (!Array.isArray(latamCarsDB)) { 
+                    const claveReal = Object.keys(latamCarsDB).find(k => k.toUpperCase() === marcaElegida); 
+                    if (claveReal && Array.isArray(latamCarsDB[claveReal])) { 
+                        latamCarsDB[claveReal].forEach(m => { const mod = typeof m === 'object' ? (m.model || m.modelo || m.name || JSON.stringify(m)) : m; if (mod) modelosUnicos.add(String(mod).trim().toUpperCase()); }); 
+                    } 
+                } else if (Array.isArray(latamCarsDB)) { 
+                    latamCarsDB.forEach(auto => { 
+                        const m = String(auto[claveMarcaDetectada] || "").trim().toUpperCase(); 
+                        if (m === marcaElegida && auto[claveModeloDetectada]) { modelosUnicos.add(String(auto[claveModeloDetectada]).trim().toUpperCase()); } 
+                    }); 
+                } 
+            } 
+            vehiculosLocales.forEach(v => { if (v.marca && v.marca.trim().toUpperCase() === marcaElegida && v.modelo) { modelosUnicos.add(v.modelo.trim().toUpperCase()); } }); 
+            
+            [...modelosUnicos].sort().slice(0, 15).forEach(modelo => { 
+                listaModelos.innerHTML += `<option value="${modelo.charAt(0) + modelo.slice(1).toLowerCase()}"></option>`; 
+            }); 
+        }
+        
         function calcularAnoPorPatente() { let patente = document.getElementById('patente').value.trim().toUpperCase().replace(/[- ]/g, ''); let inputAnio = document.getElementById('anio'); if (inputAnio.value !== "") return; let ano = ""; if (patente.length === 6) { const l = patente.substring(0, 3); if (l >= 'OAA') ano = 2015; else if (l >= 'NAA') ano = 2014; else if (l >= 'MAA') ano = 2013; else if (l >= 'LAA') ano = 2012; else if (l >= 'KAA') ano = 2011; else if (l >= 'JAA') ano = 2010; else if (l >= 'IAA') ano = 2009; else if (l >= 'HAA') ano = 2008; else if (l >= 'GAA') ano = 2007; else if (l >= 'FAA') ano = 2006; else if (l >= 'EAA') ano = 2004; else if (l >= 'DAA') ano = 2000; else if (l >= 'CAA') ano = 1998; else if (l >= 'BAA') ano = 1996; else if (l >= 'AAA') ano = 1995; } else if (patente.length === 7) { const l = patente.substring(0, 2); if (l >= 'AG') ano = 2023; else if (l >= 'AF') ano = 2022; else if (l >= 'AE') ano = 2020; else if (l >= 'AD') ano = 2019; else if (l >= 'AC') ano = 2018; else if (l >= 'AB') ano = 2017; else if (l >= 'AA') ano = 2016; } if (ano !== "") inputAnio.value = ano; }
 
         // --- DASHBOARD GRÁFICOS Y ANALÍTICA ---
@@ -542,117 +811,146 @@
             const idEditar = document.getElementById('emp_id_editar').value;
             const payload = { nombre: document.getElementById('emp_nombre').value, documento: document.getElementById('emp_doc').value, puesto: document.getElementById('emp_puesto').value };
             try {
+                let res;
                 if (idEditar) {
-                    const res = await fetch(`/api/empleados/${idEditar}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
-                    if(res.ok) { alert("Empleado actualizado."); }
+                    res = await fetch(`/api/empleados/${idEditar}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+                    if(!res.ok) throw new Error(await res.text());
+                    alert("✅ Empleado actualizado.");
                 } else {
-                    const res = await fetch('/api/empleados/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
-                    if(!res.ok) alert("Error: DNI existente.");
+                    res = await fetch('/api/empleados/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
+                    if(!res.ok) throw new Error("Posiblemente el DNI ya exista o falten datos.");
+                    alert("✅ Empleado creado.");
                 }
-                cancelarEdicionEmpleado(); cargarEmpleados();
-            } catch(e){}
+                cancelarEdicionEmpleado(); 
+                cargarEmpleados();
+            } catch(e){ alert("Error al guardar empleado: " + e.message); }
         });
 
-        function iniciarEdicionEmpleado(id, nombre, doc, puesto) {
-            document.getElementById('emp_id_editar').value = id; document.getElementById('emp_nombre').value = nombre; document.getElementById('emp_doc').value = doc; document.getElementById('emp_puesto').value = puesto;
-            document.getElementById('btn_guardar_emp').innerHTML = '<i class="ph ph-floppy-disk"></i> Guardar Cambios';
-            document.getElementById('btn_cancelar_emp').style.display = 'block';
-            document.getElementById('formEmpleado').scrollIntoView({ behavior: 'smooth' });
-        }
-
+        function iniciarEdicionEmpleado(id, nombre, doc, puesto) { document.getElementById('emp_id_editar').value = id; document.getElementById('emp_nombre').value = nombre; document.getElementById('emp_doc').value = doc; document.getElementById('emp_puesto').value = puesto; document.getElementById('btn_guardar_emp').innerHTML = '<i class="ph ph-floppy-disk"></i> Guardar Cambios'; document.getElementById('btn_cancelar_emp').style.display = 'block'; document.getElementById('formEmpleado').scrollIntoView({ behavior: 'smooth' }); }
         function cancelarEdicionEmpleado() { document.getElementById('emp_id_editar').value = ''; document.getElementById('formEmpleado').reset(); document.getElementById('btn_guardar_emp').innerHTML = '<i class="ph ph-floppy-disk"></i> Guardar Empleado'; document.getElementById('btn_cancelar_emp').style.display = 'none'; }
+        async function eliminarEmpleadoLocal(id) { if(confirm("¿Seguro que desea eliminar a este empleado?")) { try { await fetch(`/api/empleados/${id}`, { method: 'DELETE' }); cargarEmpleados(); } catch(e) {} } }
+        async function cargarEmpleados() { try { const res = await fetch('/api/empleados/'); const emps = await res.json(); document.getElementById('lista-empleados').innerHTML = ''; window.empleadosGlobal = emps; emps.forEach(e => { document.getElementById('lista-empleados').innerHTML += `<tr><td style=\"font-weight:600; color:var(--text-muted);\">${e.documento}</td><td>${e.nombre}</td><td>${e.puesto||''}</td><td style=\"text-align:center;\"><button class=\"btn-outline\" style=\"padding:5px 10px; margin-right:5px; color:var(--primary); border-color:transparent;\" onclick=\"iniciarEdicionEmpleado(${e.id}, '${e.nombre}', '${e.documento}', '${e.puesto||''}')\"><i class=\"ph ph-pencil-simple\"></i></button><button class=\"btn-outline\" style=\"padding:5px 10px; color:var(--danger); border-color:transparent;\" onclick=\"eliminarEmpleadoLocal(${e.id})\"><i class=\"ph ph-trash\"></i></button></td></tr>`; }); } catch(e){} }
 
-        async function eliminarEmpleadoLocal(id) {
-            if(confirm("¿Seguro que desea eliminar a este empleado?")) {
-                try {
-                    await fetch(`/api/empleados/${id}`, { method: 'DELETE' });
-                    cargarEmpleados();
-                } catch(e) {}
-            }
-        }
-
-        async function cargarEmpleados() { 
-            try { 
-                const res = await fetch('/api/empleados/'); const emps = await res.json(); 
-                document.getElementById('lista-empleados').innerHTML = ''; window.empleadosGlobal = emps;
-                emps.forEach(e => { 
-                    document.getElementById('lista-empleados').innerHTML += `<tr><td style="font-weight:600; color:var(--text-muted);">${e.documento}</td><td>${e.nombre}</td><td>${e.puesto||''}</td><td style="text-align:center;"><button class="btn-outline" style="padding:5px 10px; margin-right:5px; color:var(--primary); border-color:transparent;" onclick="iniciarEdicionEmpleado(${e.id}, '${e.nombre}', '${e.documento}', '${e.puesto||''}')"><i class="ph ph-pencil-simple"></i></button><button class="btn-outline" style="padding:5px 10px; color:var(--danger); border-color:transparent;" onclick="eliminarEmpleadoLocal(${e.id})"><i class="ph ph-trash"></i></button></td></tr>`; 
-                }); 
-            } catch(e){} 
-        }
-
-        // --- CAJA (CON GRÁFICOS Y BORRADO) ---
+        // --- CAJA (FINANZAS MEJORADA) ---
         async function cargarCaja() { 
             try { 
-                const res = await fetch('/api/caja/'); const movs = await res.json(); 
-                document.getElementById('lista-caja').innerHTML = ''; 
+                const res = await fetch('/api/caja/'); 
+                if (!res.ok) { console.warn("Aún no hay movimientos de caja."); renderizarGraficoFinanzas(0,0); return; }
+                
+                const movs = await res.json(); 
+                const tbody = document.getElementById('lista-caja');
+                tbody.innerHTML = ''; 
+                
+                if (movs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan=\"4\" style=\"text-align:center; color:gray;\">Sin movimientos en Caja</td></tr>';
+                    renderizarGraficoFinanzas(0,0);
+                    return;
+                }
+
                 let ingTot = 0; let egrTot = 0;
                 movs.slice().reverse().forEach(mov => { 
-                    const f = new Date(mov.fecha).toLocaleDateString('es-AR', { hour: '2-digit', minute:'2-digit' }); const c = mov.tipo === 'INGRESO' ? 'color:var(--success);' : 'color:var(--danger);'; 
-                    document.getElementById('lista-caja').innerHTML += `<tr><td style="color:var(--text-muted); font-size:0.85rem;">${f}</td><td>${mov.motivo}</td><td style="font-weight:700; ${c}">${mov.tipo==='INGRESO'?'+':'-'}$${mov.monto.toLocaleString('es-AR')}</td><td style="text-align:center;"><button class="btn-outline" style="padding:5px; color:var(--danger); border:none;" onclick="eliminarMovimientoCaja(${mov.id})"><i class="ph ph-trash"></i></button></td></tr>`; 
+                    const fechaLimpia = mov.fecha ? new Date(mov.fecha) : new Date();
+                    const f = fechaLimpia.toLocaleDateString('es-AR', { hour: '2-digit', minute:'2-digit' }); 
+                    const c = mov.tipo === 'INGRESO' ? 'color:var(--success);' : 'color:var(--danger);'; 
+                    // Etiqueta visual del metodo de pago
+                    const metodoBadge = mov.metodo_pago ? `<br><span style="font-size:0.75rem; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px; color:gray;">${mov.metodo_pago}</span>` : '';
+                    
+                    tbody.innerHTML += `<tr><td style=\"color:var(--text-muted); font-size:0.85rem;\">${f}</td><td>${mov.motivo} ${metodoBadge}</td><td style=\"font-weight:700; ${c}\">${mov.tipo==='INGRESO'?'+':'-'}$${mov.monto.toLocaleString('es-AR')}</td><td style=\"text-align:center;\"><button class=\"btn-outline\" style=\"padding:5px; color:var(--danger); border:none;\" onclick=\"eliminarMovimientoCaja(${mov.id})\"><i class=\"ph ph-trash\"></i></button></td></tr>`; 
                     if(mov.tipo === 'INGRESO') ingTot += mov.monto; else egrTot += mov.monto;
                 }); 
                 renderizarGraficoFinanzas(ingTot, egrTot);
-            } catch(e){} 
+            } catch(e){ console.error("Error al cargar caja", e); renderizarGraficoFinanzas(0,0); } 
         }
         
-        document.getElementById('formCaja').addEventListener('submit', async (e) => { e.preventDefault(); await fetch('/api/caja/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: document.getElementById('caja_tipo').value, metodo_pago: document.getElementById('caja_metodo').value, monto: parseFloat(document.getElementById('caja_monto').value), motivo: document.getElementById('caja_motivo').value }) }); document.getElementById('formCaja').reset(); cargarCaja(); });
+        document.getElementById('formCaja').addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            try {
+                const res = await fetch('/api/caja/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: document.getElementById('caja_tipo').value, metodo_pago: document.getElementById('caja_metodo').value, monto: parseFloat(document.getElementById('caja_monto').value), motivo: document.getElementById('caja_motivo').value }) }); 
+                if (!res.ok) throw new Error(await res.text());
+                document.getElementById('formCaja').reset(); 
+                alert("✅ Movimiento registrado en Caja.");
+                cargarCaja(); 
+            } catch(e) { alert("Error al registrar movimiento: " + e.message); }
+        });
 
-        async function eliminarMovimientoCaja(id) {
-            if(confirm("¿Seguro que desea borrar este movimiento de caja?")) {
-                try { await fetch(`/api/caja/${id}`, { method: 'DELETE' }); cargarCaja(); } catch(e) {}
-            }
-        }
+        async function eliminarMovimientoCaja(id) { if(confirm("¿Seguro que desea borrar este movimiento de caja?")) { try { await fetch(`/api/caja/${id}`, { method: 'DELETE' }); cargarCaja(); } catch(e) {} } }
         
         // --- ASISTENCIA (QR MÓVIL Y REPORTE) ---
         function abrirModalQREmpleado() { document.getElementById('modal-qr-empleado').style.display = 'flex'; document.getElementById('qr_input_simulado').focus(); }
-        
-        async function procesarFichadaMovil() { 
-            const dni = document.getElementById('fichada_movil_dni').value; 
-            if (!dni) return; 
-            try {
-                const res = await fetch('/api/asistencia/fichar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ documento: dni }) }); 
-                const data = await res.json(); 
-                if (res.ok) { alert(data.mensaje); document.getElementById('fichada_movil_dni').value = ''; } 
-                else { alert("Error: " + data.detail); }
-            } catch(e) { alert("Error de conexión."); }
-        }
-
-        async function procesarFichadaSimulada() { const dni = document.getElementById('qr_input_simulado').value; if (!dni) return; const res = await fetch('/api/asistencia/fichar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ documento: dni }) }); const data = await res.json(); if (res.ok) { alert(data.mensaje); document.getElementById('modal-qr-empleado').style.display='none'; document.getElementById('qr_input_simulado').value=''; cargarPresentesDashboard(); } }
+        async function procesarFichadaMovil() { const dni = document.getElementById('fichada_movil_dni').value; if (!dni) return; try { const res = await fetch('/api/asistencia/fichar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ documento: dni }) }); const data = await res.json(); if (res.ok) { alert(data.mensaje); document.getElementById('fichada_movil_dni').value = ''; } else { alert("Error: " + data.detail); } } catch(e) { alert("Error de conexión."); } }
         
         async function cargarPresentesDashboard() { 
             try { 
-                const res = await fetch('/api/asistencia/presentes'); const presentes = await res.json(); 
-                
-                // Llenar Dashboard
-                const listaDash = document.getElementById('lista-presentes-dash'); listaDash.innerHTML = ''; 
-                if (presentes.length === 0) { listaDash.innerHTML = '<li style="text-align:center; color:var(--text-muted); padding: 15px;"><i class="ph ph-coffee" style="font-size:2rem; display:block; margin-bottom:10px;"></i>Nadie en turno activo.</li>'; } 
-                else {
-                    presentes.forEach(p => { const h = new Date(p.hora_entrada).toLocaleTimeString('es-AR', { hour: '2-digit', minute:'2-digit' }); listaDash.innerHTML += `<li style="display:flex; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); align-items:center;"><span><i class="ph ph-user-circle" style="color:var(--success); font-size:1.2rem; vertical-align:middle; margin-right:5px;"></i> <strong>${p.nombre}</strong></span><span style="color:var(--text-muted); font-size:0.85rem;"><i class="ph ph-clock"></i> Ingreso: ${h}</span></li>`; }); 
-                }
-
-                // Llenar Reporte de RRHH (Fase 3 Básica)
-                const listaReporte = document.getElementById('lista-reporte-horas');
-                listaReporte.innerHTML = '';
-                if(presentes.length === 0) { listaReporte.innerHTML = '<tr><td colspan="3" style="text-align:center; color:gray;">Sin actividad registrada hoy.</td></tr>'; return; }
-                presentes.forEach(p => {
-                    const h = new Date(p.hora_entrada).toLocaleTimeString('es-AR', { hour: '2-digit', minute:'2-digit' });
-                    listaReporte.innerHTML += `<tr><td style="font-weight:600;">${p.nombre}</td><td>${h}</td><td><span style="color:var(--success); font-weight:700;">En Taller</span></td></tr>`;
-                });
-
+                const res = await fetch('/api/asistencia/presentes'); 
+                const presentes = await res.json(); 
+                const listaDash = document.getElementById('lista-presentes-dash'); 
+                listaDash.innerHTML = ''; 
+                if (presentes.length === 0) { 
+                    listaDash.innerHTML = '<li style=\"text-align:center; color:var(--text-muted); padding: 15px;\"><i class=\"ph ph-coffee\" style=\"font-size:2rem; display:block; margin-bottom:10px;\"></i>Nadie en turno activo.</li>'; 
+                } else { 
+                    presentes.forEach(p => { 
+                        // Mostramos la hora exacta local sin que JS la cambie de zona
+                        const h = new Date(p.hora_entrada).toLocaleTimeString('es-AR', { hour: '2-digit', minute:'2-digit' }); 
+                        listaDash.innerHTML += `<li style=\"display:flex; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); align-items:center;\"><span><i class=\"ph ph-user-circle\" style=\"color:var(--success); font-size:1.2rem; vertical-align:middle; margin-right:5px;\"></i> <strong>${p.nombre}</strong></span><span style=\"color:var(--text-muted); font-size:0.85rem;\"><i class=\"ph ph-clock\"></i> Ingreso: ${h}</span></li>`; 
+                    }); 
+                } 
             } catch(e){} 
         }
 
-        // --- PRESUPUESTOS Y PDF ---
+        // --- PRESUPUESTOS (EDICIÓN Y BORRADO DE ITEMS) ---
         let itemsRapidos = [];
         function seleccionarServicioRapido() { const val = document.getElementById('select_catalogo_rapido').value; if(!val){document.getElementById('rapido_desc').value=""; document.getElementById('rapido_precio').value="";} else { const serv = JSON.parse(val); document.getElementById('rapido_desc').value = serv.nombre; document.getElementById('rapido_precio').value = serv.precio; } }
         function agregarItemRapido() { const desc = document.getElementById('rapido_desc').value; const cant = parseInt(document.getElementById('rapido_cant').value) || 1; const precio = parseFloat(document.getElementById('rapido_precio').value) || 0; if (!desc || precio <= 0) return; itemsRapidos.push({ descripcion: desc, cantidad: cant, precio_unitario: precio }); document.getElementById('rapido_desc').value = ''; document.getElementById('rapido_precio').value = ''; document.getElementById('select_catalogo_rapido').value = ''; renderizarItemsRapidos(); }
-        function renderizarItemsRapidos() { const lista = document.getElementById('lista_items_rapidos'); lista.innerHTML = ''; let total = 0; itemsRapidos.forEach((item, index) => { const sub = item.cantidad * item.precio_unitario; total += sub; lista.innerHTML += `<tr><td>${item.descripcion}</td><td style="text-align:center;">${item.cantidad}</td><td style="text-align:right; font-weight:bold; color:var(--dark);">$${sub.toLocaleString('es-AR')}</td><td style="text-align:center;"><button onclick="eliminarItemRapido(${index})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem;"><i class="ph ph-trash"></i></button></td></tr>`; }); document.getElementById('rapido_total').innerText = total.toLocaleString('es-AR'); }
+        function renderizarItemsRapidos() { const lista = document.getElementById('lista_items_rapidos'); lista.innerHTML = ''; let total = 0; itemsRapidos.forEach((item, index) => { const sub = item.cantidad * item.precio_unitario; total += sub; lista.innerHTML += `<tr><td>${item.descripcion}</td><td style=\"text-align:center;\">${item.cantidad}</td><td style=\"text-align:right; font-weight:bold; color:var(--dark);\">$${sub.toLocaleString('es-AR')}</td><td style=\"text-align:center;\"><button onclick=\"eliminarItemRapido(${index})\" style=\"background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem;\"><i class=\"ph ph-trash\"></i></button></td></tr>`; }); document.getElementById('rapido_total').innerText = total.toLocaleString('es-AR'); }
         function eliminarItemRapido(index) { itemsRapidos.splice(index, 1); renderizarItemsRapidos(); }
         function seleccionarServicioPreCargado() { const val = document.getElementById('select_catalogo').value; if(!val){document.getElementById('item_desc').value=""; document.getElementById('item_precio').value="";} else { const serv = JSON.parse(val); document.getElementById('item_desc').value = serv.nombre; document.getElementById('item_precio').value = serv.precio; } }
         
         async function abrirModalPresupuesto(orden) { ordenActualParaPDF = orden; document.getElementById('modal_orden_id').value = orden.id; document.getElementById('modal-presupuesto').style.display = 'flex'; cargarItemsPresupuesto(orden.id); }
-        async function cargarItemsPresupuesto(id) { try { const res = await fetch(`/api/ordenes/${id}/detalles`); const det = await res.json(); document.getElementById('lista_items_orden').innerHTML = ''; let t = 0; det.forEach(i => { const s = i.cantidad*i.precio_unitario; t+=s; document.getElementById('lista_items_orden').innerHTML += `<li><span><strong>${i.cantidad}x</strong> ${i.descripcion}</span><strong style="color:var(--dark);">$${s.toLocaleString('es-AR')}</strong></li>`; }); document.getElementById('modal_total').innerText = t.toLocaleString('es-AR'); } catch(e){} }
+        
+        async function cargarItemsPresupuesto(id_orden) { 
+            try { 
+                const res = await fetch(`/api/ordenes/${id_orden}/detalles`); 
+                const det = await res.json(); 
+                document.getElementById('lista_items_orden').innerHTML = ''; 
+                let t = 0; 
+                det.forEach(i => { 
+                    const s = i.cantidad * i.precio_unitario; 
+                    t += s; 
+                    
+                    document.getElementById('lista_items_orden').innerHTML += `
+                        <li style=\"display:flex; justify-content:space-between; align-items:center;\">
+                            <span style=\"flex:2;\"><strong>${i.cantidad}x</strong> ${i.descripcion}</span>
+                            <div style=\"flex:1; display:flex; gap:10px; align-items:center; justify-content:flex-end;\">
+                                <strong style=\"color:var(--text-muted); font-size:0.9rem;\">Precio Unit. $</strong> 
+                                <input type=\"number\" value=\"${i.precio_unitario}\" style=\"width:100px; margin:0; padding:8px; text-align:right; border-color:var(--primary); font-weight:bold; color:var(--dark);\" onchange=\"actualizarPrecioDetalle(${id_orden}, ${i.id}, this.value)\">
+                                <button onclick=\"eliminarDetalleOrden(${id_orden}, ${i.id})\" style=\"background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem; margin-left:10px;\"><i class=\"ph ph-trash\"></i></button>
+                            </div>
+                        </li>`; 
+                }); 
+                document.getElementById('modal_total').innerText = t.toLocaleString('es-AR'); 
+            } catch(e){} 
+        }
+
+        async function actualizarPrecioDetalle(id_orden, id_detalle, nuevo_precio) {
+            try {
+                const res = await fetch(`/api/ordenes/detalles/${id_detalle}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ precio_unitario: parseFloat(nuevo_precio) })
+                });
+                if(!res.ok) throw new Error("Falta configurar la ruta PUT en el backend.");
+                cargarItemsPresupuesto(id_orden);
+            } catch(e) { alert("Error al actualizar precio: " + e.message); }
+        }
+
+        async function eliminarDetalleOrden(id_orden, id_detalle) {
+            if(!confirm("¿Seguro que querés quitar este ítem de la orden?")) return;
+            try {
+                const res = await fetch(`/api/ordenes/detalles/${id_detalle}`, { method: 'DELETE' });
+                cargarItemsPresupuesto(id_orden);
+            } catch(e) { alert("Error al eliminar: " + e.message); }
+        }
+        
         async function agregarItemPresupuesto() { const id = document.getElementById('modal_orden_id').value; const desc = document.getElementById('item_desc').value; const cant = document.getElementById('item_cant').value; const pre = document.getElementById('item_precio').value; if(!desc)return; await fetch(`/api/ordenes/${id}/detalles`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ descripcion: desc, cantidad: parseInt(cant), precio_unitario: parseFloat(pre||0) }) }); document.getElementById('item_desc').value=''; document.getElementById('item_precio').value=''; document.getElementById('select_catalogo').value=''; cargarItemsPresupuesto(id); }
         
         function crearMagiaPDF(listaItems, origen) {
@@ -661,10 +959,10 @@
             const esCotizacion = (origen === "Cotizacion"); let cliente = ""; let vehiculo = ""; let patente = ""; let ordenNro = "";
             if (esCotizacion) { cliente = document.getElementById('rapido_cliente').value || "Consumidor Final"; const marca = document.getElementById('rapido_marca').value || ""; const modelo = document.getElementById('rapido_modelo').value || ""; vehiculo = (marca || modelo) ? `${marca} ${modelo}`.trim() : "A Confirmar"; } else { cliente = ordenActualParaPDF.dueño; vehiculo = ordenActualParaPDF.vehiculo_desc; patente = "Patente: " + ordenActualParaPDF.patente; ordenNro = "00" + document.getElementById('modal_orden_id').value; }
             let filasTabla = ""; let total = 0;
-            listaItems.forEach(item => { const subtotal = item.cantidad * item.precio_unitario; total += subtotal; filasTabla += `<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding:12px; color:#18181b;">${item.descripcion}</td><td style="padding:12px; text-align:center; color:#18181b;">${item.cantidad}</td><td style="padding:12px; text-align:right; color:#18181b;">$${item.precio_unitario.toLocaleString('es-AR')}</td><td style="padding:12px; text-align:right; font-weight:900; color:#000000;">$${subtotal.toLocaleString('es-AR')}</td></tr>`; });
-            const logoHtml = logoBase64Actual ? `<img src="${logoBase64Actual}" style="max-height: 80px; margin-bottom: 10px;">` : ``;
+            listaItems.forEach(item => { const subtotal = item.cantidad * item.precio_unitario; total += subtotal; filasTabla += `<tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding:12px; color:#18181b;\">${item.descripcion}</td><td style=\"padding:12px; text-align:center; color:#18181b;\">${item.cantidad}</td><td style=\"padding:12px; text-align:right; color:#18181b;\">$${item.precio_unitario.toLocaleString('es-AR')}</td><td style=\"padding:12px; text-align:right; font-weight:900; color:#000000;\">$${subtotal.toLocaleString('es-AR')}</td></tr>`; });
+            const logoHtml = logoBase64Actual ? `<img src=\"${logoBase64Actual}\" style=\"max-height: 80px; margin-bottom: 10px;\">` : ``;
 
-            const htmlImpresion = `<!DOCTYPE html><html><head><title>${esCotizacion ? 'Cotización' : 'Presupuesto'}</title><style>body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #18181b; margin: 0; padding: 40px; } .header { display: flex; justify-content: space-between; border-bottom: 4px solid #dc2626; padding-bottom: 20px; margin-bottom: 30px; } .header h2 { margin: 0; color: #000000; font-size: 26px; text-transform: uppercase; font-weight: 900;} .header p { margin: 5px 0 0 0; color: #52525b; font-size: 14px; font-weight: bold;} .title-box { text-align: right; } .title-box h1 { margin: 0; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; font-size: 28px; font-weight: 900;} .info-box { background: #f4f4f5; padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #e4e4e7; display: flex; gap: 20px; } .info-box div { flex: 1; font-size: 14px; } table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; } th { background-color: #000000; color: white; padding: 12px; text-align: left; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;} .total-box { display: flex; justify-content: flex-end; } .total-box div { width: 250px; padding: 20px; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 8px; text-align: right; } .total-box strong { font-size: 1.5rem; color: #000000; } .total-box span { color: #dc2626; font-weight: 900;} @page { size: A4; margin: 10mm; }</style></head><body> <div class="header"><div> ${logoHtml} <h2>${tallerNombre}</h2><p>${tallerDir}</p><p>Tel: ${tallerTel}</p></div><div class="title-box"><h1>${esCotizacion ? 'COTIZACIÓN' : 'PRESUPUESTO OFICIAL'}</h1><p style="font-weight:bold;">Fecha: ${fecha}</p>${!esCotizacion ? `<p style="color:gray;">Orden N°: ${ordenNro}</p>` : ''}</div></div><div class="info-box"><div><strong>Cliente:</strong> ${cliente}</div><div><strong>Vehículo:</strong> ${vehiculo} <span style="color:gray; font-style:italic;">${patente}</span></div></div><table><thead><tr><th>Descripción del Servicio / Repuesto</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Precio Unit.</th><th style="text-align: right;">Subtotal</th></tr></thead><tbody> ${filasTabla} </tbody></table><div class="total-box"><div><strong>TOTAL: <br><span>$${total.toLocaleString('es-AR')}</span></strong></div></div><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`;
+            const htmlImpresion = `<!DOCTYPE html><html><head><title>${esCotizacion ? 'Cotización' : 'Presupuesto'}</title><style>body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #18181b; margin: 0; padding: 40px; } .header { display: flex; justify-content: space-between; border-bottom: 4px solid #dc2626; padding-bottom: 20px; margin-bottom: 30px; } .header h2 { margin: 0; color: #000000; font-size: 26px; text-transform: uppercase; font-weight: 900;} .header p { margin: 5px 0 0 0; color: #52525b; font-size: 14px; font-weight: bold;} .title-box { text-align: right; } .title-box h1 { margin: 0; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; font-size: 28px; font-weight: 900;} .info-box { background: #f4f4f5; padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #e4e4e7; display: flex; gap: 20px; } .info-box div { flex: 1; font-size: 14px; } table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; } th { background-color: #000000; color: white; padding: 12px; text-align: left; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;} .total-box { display: flex; justify-content: flex-end; } .total-box div { width: 250px; padding: 20px; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 8px; text-align: right; } .total-box strong { font-size: 1.5rem; color: #000000; } .total-box span { color: #dc2626; font-weight: 900;} @page { size: A4; margin: 10mm; }</style></head><body> <div class=\"header\"><div> ${logoHtml} <h2>${tallerNombre}</h2><p>${tallerDir}</p><p>Tel: ${tallerTel}</p></div><div class=\"title-box\"><h1>${esCotizacion ? 'COTIZACIÓN' : 'PRESUPUESTO OFICIAL'}</h1><p style=\"font-weight:bold;\">Fecha: ${fecha}</p>${!esCotizacion ? `<p style=\"color:gray;\">Orden N°: ${ordenNro}</p>` : ''}</div></div><div class=\"info-box\"><div><strong>Cliente:</strong> ${cliente}</div><div><strong>Vehículo:</strong> ${vehiculo} <span style=\"color:gray; font-style:italic;\">${patente}</span></div></div><table><thead><tr><th>Descripción del Servicio / Repuesto</th><th style=\"text-align: center;\">Cant.</th><th style=\"text-align: right;\">Precio Unit.</th><th style=\"text-align: right;\">Subtotal</th></tr></thead><tbody> ${filasTabla} </tbody></table><div class=\"total-box\"><div><strong>TOTAL: <br><span>$${total.toLocaleString('es-AR')}</span></strong></div></div><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`;
             const ventanaImpresion = window.open('', '_blank'); ventanaImpresion.document.write(htmlImpresion); ventanaImpresion.document.close(); document.getElementById('modal-presupuesto').style.display='none';
         }
         async function generarPDFOficial() { const id_orden = document.getElementById('modal_orden_id').value; const resItems = await fetch(`/api/ordenes/${id_orden}/detalles`); const itemsReales = await resItems.json(); crearMagiaPDF(itemsReales, "Orden Oficial"); }
@@ -680,13 +978,100 @@
         async function procesarCobroOrden() {
             const idOrden = document.getElementById('cobro_orden_id').value; const monto = parseFloat(document.getElementById('cobro_monto_raw').value); const metodo = document.getElementById('cobro_metodo').value; const patente = document.getElementById('cobro_patente').innerText;
             try {
-                await fetch('/api/caja/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: 'INGRESO', metodo_pago: metodo, monto: monto, motivo: `Cobro Trabajos Vehículo ${patente}` }) });
-                await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'Entregado', ubicacion: 'Entregado' }) });
-                document.getElementById('modal-cobrar').style.display = 'none'; alert("✅ Pago registrado en Caja y Vehículo Entregado al cliente."); cargarTablero(); cargarCaja();
-            } catch(e) { alert("Error al procesar el cobro."); }
+                const resCaja = await fetch('/api/caja/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: 'INGRESO', metodo_pago: metodo, monto: monto, motivo: `Cobro Trabajos Vehículo ${patente}` }) });
+                if (!resCaja.ok) throw new Error("No se pudo registrar en la caja.");
+                const resOrd = await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'Entregado', ubicacion: 'Entregado' }) });
+                if (!resOrd.ok) throw new Error("Caja guardada, pero falló al cerrar el vehículo.");
+                
+                document.getElementById('modal-cobrar').style.display = 'none'; 
+                alert("✅ Pago registrado en Caja y Vehículo Entregado al cliente."); 
+                cargarTablero(); 
+                cargarCaja();
+            } catch(e) { alert("Error al procesar el cobro: " + e.message); }
+        }
+        async function calcularMetricasAvanzadas() {
+            try {
+                // 1. CÁLCULO DE TIEMPO PROMEDIO (Ahora lee correctamente la hora local)
+                const resO = await fetch('/api/ordenes/'); 
+                if(!resO.ok) return;
+                const ordenes = await resO.json();
+                
+                let totalHoras = 0;
+                let autosTerminados = 0;
+                let autosDelMes = 0;
+                const mesActual = new Date().getMonth();
+
+                ordenes.forEach(o => {
+                    const fechaIngreso = new Date(o.fecha_ingreso || Date.now());
+                    if (fechaIngreso.getMonth() === mesActual) autosDelMes++;
+
+                    if (o.estado === 'Terminado' || o.estado === 'Entregado') {
+                        autosTerminados++;
+                        const fechaFin = o.fecha_terminado ? new Date(o.fecha_terminado) : new Date();
+                        const horasTardadas = Math.abs(fechaFin - fechaIngreso) / 36e5; 
+                        totalHoras += horasTardadas;
+                    }
+                });
+
+                const elAutosMes = document.getElementById('dash-autos-mes');
+                if(elAutosMes) elAutosMes.innerText = autosDelMes;
+                
+                const elPromedio = document.getElementById('dash-tiempo-promedio');
+                if (autosTerminados > 0 && elPromedio) {
+                    let promedio = (totalHoras / autosTerminados).toFixed(1);
+                    if (promedio > 24) { elPromedio.innerText = (promedio / 24).toFixed(1) + " Días"; } 
+                    else { elPromedio.innerText = promedio + " Horas"; }
+                } else if(elPromedio) {
+                    elPromedio.innerText = "0 Horas";
+                }
+
+                // 2. CÁLCULO DE HORAS TRABAJADAS (REPORTE MENSUAL)
+                try {
+                    const resA = await fetch('/api/asistencia/'); 
+                    if (resA.ok) {
+                        const asistencias = await resA.json();
+                        const reporte = {}; 
+                        const mesActual = new Date().getMonth();
+
+                        asistencias.forEach(a => {
+                            if (!a.hora_entrada) return; 
+                            
+                            const fechaE = new Date(a.hora_entrada);
+                            if (fechaE.getMonth() !== mesActual) return; 
+
+                            // Python ahora nos manda el nombre exacto, no hay que adivinarlo
+                            const nombreFinal = a.nombre;
+
+                            if (!reporte[nombreFinal]) reporte[nombreFinal] = { horas: 0, estado: 'Inactivo' };
+
+                            if (a.hora_salida) {
+                                const horas = Math.abs(new Date(a.hora_salida) - fechaE) / 36e5;
+                                reporte[nombreFinal].horas += horas;
+                            } else {
+                                reporte[nombreFinal].estado = 'Trabajando';
+                            }
+                        });
+
+                        const tbodyRRHH = document.getElementById('lista-reporte-mensual');
+                        if(tbodyRRHH) {
+                            tbodyRRHH.innerHTML = '';
+                            if(Object.keys(reporte).length === 0) {
+                                tbodyRRHH.innerHTML = '<tr><td colspan="3" style="text-align:center; color:gray;">Sin datos finalizados en este mes</td></tr>';
+                            } else {
+                                for (const [nombreEmp, data] of Object.entries(reporte)) {
+                                    const colorEstado = data.estado === 'Trabajando' ? 'color:var(--success); font-weight:bold;' : 'color:gray;';
+                                    tbodyRRHH.innerHTML += `<tr><td style="font-weight:600; text-transform:capitalize;">${nombreEmp}</td><td style="font-weight:900; font-size:1.1rem;">${data.horas.toFixed(1)} hs</td><td style="${colorEstado}">${data.estado}</td></tr>`;
+                                }
+                            }
+                        }
+                    }
+                } catch(e) { console.log("Aviso: Falta conectar ruta de asistencia", e); }
+
+            } catch(e) { console.log("Aviso en métricas globales:", e); }
         }
 
         window.onload = detectarVistasMoviles;
+
     </script>
 </body>
 </html>
