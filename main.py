@@ -22,8 +22,10 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 
 
-
-
+# Claves para el Login
+SECRET_KEY = "mi_clave_secreta_taller_360_super_segura"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 720
 # Esta línea es mágica: crea todas las tablas en la base de datos si no existen
 models.Base.metadata.create_all(bind=engine)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
