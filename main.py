@@ -63,44 +63,50 @@ app.include_router(turnos.router, prefix="/api")
 # ==========================================
 @app.post("/api/saas/registro", tags=["SaaS Admin"])
 def registrar_nuevo_taller(datos: RegistroSaaS, db: Session = Depends(get_db), llave: str = Depends(verificar_llave_maestra)):
-    # 1. Verificar que el email no exista ya
-    usuario_existente = db.query(Usuario).filter(Usuario.email == datos.email_admin).first()
-    if usuario_existente:
-        raise HTTPException(status_code=400, detail="El email ya está registrado")
+    try:
+        # 1. Verificar que el email no exista ya
+        usuario_existente = db.query(Usuario).filter(Usuario.email == datos.email_admin).first()
+        if usuario_existente:
+            raise HTTPException(status_code=400, detail="El email ya está registrado")
 
-    # 2. Crear el Taller
-    nuevo_taller = Taller(
-        nombre_fantasia=datos.nombre_taller,
-        email_contacto=datos.email_admin,
-        telefono=datos.telefono_taller,
-        codigo_afiliado=datos.codigo_afiliado
-    )
-    db.add(nuevo_taller)
-    db.commit()
-    db.refresh(nuevo_taller)
+        # 2. Crear el Taller
+        nuevo_taller = Taller(
+            nombre_fantasia=datos.nombre_taller,
+            email_contacto=datos.email_admin,
+            telefono=datos.telefono_taller,
+            codigo_afiliado=datos.codigo_afiliado
+        )
+        db.add(nuevo_taller)
+        db.commit()
+        db.refresh(nuevo_taller)
 
-    # 3. Crear el Usuario Admin para ese taller
-    hash_pass = pwd_context.hash(datos.password_admin)
-    nuevo_usuario = Usuario(
-        email=datos.email_admin,
-        password_hash=hash_pass,
-        rol="admin",
-        taller_id=nuevo_taller.id
-    )
-    db.add(nuevo_usuario)
+        # 3. Crear el Usuario Admin para ese taller
+        hash_pass = pwd_context.hash(datos.password_admin)
+        nuevo_usuario = Usuario(
+            email=datos.email_admin,
+            password_hash=hash_pass,
+            rol="admin",
+            taller_id=nuevo_taller.id
+        )
+        db.add(nuevo_usuario)
 
-    # 4. Crear la configuración inicial del taller
-    config_inicial = TallerConfig(
-        taller_id=nuevo_taller.id,
-        nombre_taller=datos.nombre_taller,
-        email=datos.email_admin,
-        telefono=datos.telefono_taller
-    )
-    db.add(config_inicial)
+        # 4. Crear la configuración inicial del taller
+        config_inicial = TallerConfig(
+            taller_id=nuevo_taller.id,
+            nombre_taller=datos.nombre_taller,
+            email=datos.email_admin,
+            telefono=datos.telefono_taller
+        )
+        db.add(config_inicial)
 
-    db.commit()
+        db.commit()
 
-    return {"mensaje": "Taller creado exitosamente", "taller_id": nuevo_taller.id}
+        return {"mensaje": "Taller creado exitosamente", "taller_id": nuevo_taller.id}
+    
+    except Exception as e:
+        # Si algo explota, deshacemos los cambios a medias y mostramos el error real
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"ERROR DETALLADO DE BASE DE DATOS: {str(e)}")
 
 # ==========================================
 # AUTENTICACIÓN (LOGIN)
