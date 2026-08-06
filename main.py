@@ -1,5 +1,4 @@
 
-import webview
 import uvicorn
 import threading
 import jwt
@@ -142,11 +141,4 @@ if __name__ == '__main__':
 
     # 4. Creamos y abrimos la ventana nativa apuntando a nuestro servidor local
     # Puedes ajustar el tamaño (width, height) como prefieras
-    ventana = webview.create_window(
-        title='Gestión de Taller', 
-        url='http://localhost:8000',
-        width=1200, 
-        height=800,
-        min_size=(800, 600)
-    )
-    
+
