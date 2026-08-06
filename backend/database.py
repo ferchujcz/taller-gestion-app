@@ -4,7 +4,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Busca la URL en las variables de entorno (la nube). Si no existe, usa un archivo local.
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./taller_local.db")
+# Usamos un get() seguro para evitar strings vacíos
+url_env = os.getenv("DATABASE_URL")
+if not url_env or url_env.strip() == "":
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./taller_local.db"
+else:
+    SQLALCHEMY_DATABASE_URL = url_env
 
 # Ajuste necesario porque Render/Neon usan Postgres
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
@@ -25,11 +30,3 @@ def get_db():
         yield db
     finally:
         db.close()
-# connect_args={"check_same_thread": False} es clave en SQLite cuando usamos FastAPI
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
