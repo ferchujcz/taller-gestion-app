@@ -19,7 +19,10 @@ function cerrarSesion() {
 }
 
     
-    
+    // Arranca la validación apenas carga la página web
+    window.onload = function() {
+        verificarToken(); // O el nombre de la función que verifica si ya inició sesión
+    };
     
     
     // ==========================================
@@ -1099,10 +1102,29 @@ function cerrarMenuMovil() {
 
 // Opcional: Que el menú se cierre solo cuando eligen una opción en el celular
 function cambiarSeccion(idSeccion, elementoMenu) {
-    // ... acá va tu lógica actual para cambiar de pestaña ...
-    
-    // Agregá esto al final de tu función cambiarSeccion actual:
+    // 1. Ocultamos TODAS las pantallas (secciones)
+    const secciones = document.querySelectorAll('.section');
+    secciones.forEach(sec => {
+        sec.style.display = 'none';
+    });
+
+    // 2. Mostramos SOLO la pantalla que el usuario tocó
+    const seccionDestino = document.getElementById('sec-' + idSeccion);
+    if (seccionDestino) {
+        seccionDestino.style.display = 'block';
+    } else {
+        console.warn("No se encontró la pantalla: sec-" + idSeccion);
+    }
+
+    // 3. Pintamos de rojo (o tu color activo) el botón seleccionado en el menú
+    const botonesMenu = document.querySelectorAll('.menu-item');
+    botonesMenu.forEach(btn => btn.classList.remove('active'));
+    if (elementoMenu) {
+        elementoMenu.classList.add('active');
+    }
+
+    // 4. Cerramos el menú suavemente si estamos en un celular
     if (window.innerWidth <= 768) {
-        cerrarMenuMovil();
+        document.getElementById('sidebar').classList.remove('abierto');
     }
 }

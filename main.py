@@ -159,3 +159,8 @@ def mostrar_login():
 @app.get("/box/{nombre_box}", response_class=FileResponse)
 def pantalla_mecanico(nombre_box: str):
     return "frontend/box.html"
+
+# RUTA SECRETA PARA EL FUNDADOR (Alta Rápida desde el celular)
+@app.get("/alta_admin", response_class=FileResponse)
+def mostrar_alta_rapida():
+    return "frontend/alta.html"

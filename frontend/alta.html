@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SaaS Admin - Alta Rápida</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; background: #2a2a2a; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #e60000; margin-top: 0; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
+        input { width: 100%; padding: 10px; border: none; border-radius: 5px; background: #333; color: white; box-sizing: border-box; }
+        input:focus { outline: 2px solid #e60000; }
+        button { width: 100%; padding: 12px; background: #e60000; color: white; border: none; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .llave-maestra { border: 1px dashed #e60000; padding: 10px; border-radius: 5px; background: rgba(230,0,0,0.1); margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚀 Alta Rápida de Taller</h2>
+    <form id="formAlta" onsubmit="registrarTaller(event)">
+        
+        <div class="llave-maestra">
+            <label>🔑 Tu Llave Maestra (Seguridad)</label>
+            <input type="password" id="llave_maestra" required placeholder="Ej: mi_clave_secreta...">
+        </div>
+
+        <div class="input-group">
+            <label>Nombre del Taller</label>
+            <input type="text" id="nombre_taller" required placeholder="Ej: Taller Los Hermanos">
+        </div>
+        <div class="input-group">
+            <label>Teléfono</label>
+            <input type="text" id="telefono_taller" required placeholder="Ej: 3755 123456">
+        </div>
+        <div class="input-group">
+            <label>Email del Administrador</label>
+            <input type="email" id="email_admin" required placeholder="contacto@taller.com">
+        </div>
+        <div class="input-group">
+            <label>Contraseña para el cliente</label>
+            <input type="text" id="password_admin" required placeholder="Ej: 123456">
+        </div>
+        <div class="input-group">
+            <label>Código de Afiliado (Opcional)</label>
+            <input type="text" id="codigo_afiliado" placeholder="Ej: INFLUENCER2026">
+        </div>
+
+        <button type="submit" id="btnGuardar">Crear Taller Ahora</button>
+    </form>
+</div>
+
+<script>
+    async function registrarTaller(event) {
+        event.preventDefault(); // Evita que la página recargue
+        const btn = document.getElementById('btnGuardar');
+        btn.innerText = "Creando...";
+        btn.disabled = true;
+
+        const llave = document.getElementById('llave_maestra').value;
+        const datos = {
+            nombre_taller: document.getElementById('nombre_taller').value,
+            telefono_taller: document.getElementById('telefono_taller').value,
+            email_admin: document.getElementById('email_admin').value,
+            password_admin: document.getElementById('password_admin').value,
+            codigo_afiliado: document.getElementById('codigo_afiliado').value
+        };
+
+        try {
+            const respuesta = await fetch('/api/saas/registro', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': llave
+                },
+                body: JSON.stringify(datos)
+            });
+
+            const resultado = await respuesta.json();
+
+            if (respuesta.ok) {
+                alert("✅ ¡Éxito! " + resultado.mensaje);
+                document.getElementById('formAlta').reset(); // Limpia el formulario
+            } else {
+                alert("❌ Error: " + resultado.detail);
+            }
+        } catch (error) {
+            alert("Error de conexión al servidor.");
+        } finally {
+            btn.innerText = "Crear Taller Ahora";
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>
