@@ -1,5 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import datetime
+
+
+class RegistroSaaS(BaseModel):
+    nombre_taller: str
+    telefono_taller: str
+    email_admin: EmailStr
+    password_admin: str
+    codigo_afiliado: Optional[str] = None # Opcional, por si vienen sin código
+    
 # Esquema para cuando creamos un cliente nuevo
 class ClienteCreate(BaseModel):
     nombre: str
@@ -18,12 +28,14 @@ class VehiculoCreate(BaseModel):
 class OrdenTrabajoCreate(BaseModel):
     vehiculo_id: int
     descripcion_falla: str
-    # No pedimos el estado ni la ubicación acá porque por defecto 
-    # nuestro models.py ya le pone "Turno Asignado"
-
+    nivel_combustible: Optional[str] = None
+    detalles_ingreso: Optional[str] = None
+    
 class OrdenTrabajoUpdate(BaseModel):
     estado: str = None
     ubicacion: str = None
+    nivel_combustible: Optional[str] = None  # <--- AGREGAR
+    detalles_ingreso: Optional[str] = None   # <--- AGREGAR
 
 class ConfigUpdate(BaseModel):
     nombre_taller: str
@@ -86,3 +98,28 @@ class BoxTaller(BoxTallerBase):
     id: int
     class Config:
         from_attributes = True
+
+class TurnoBase(BaseModel):
+    fecha_hora: datetime
+    cliente_nombre: str
+    vehiculo: str
+    motivo: str
+    estado: Optional[str] = "Pendiente"
+
+class TurnoCreate(TurnoBase):
+    pass
+
+class TurnoResponse(TurnoBase):
+    id: int
+    taller_id: int
+    
+    class Config:
+        orm_mode = True
+
+class TareaCreate(BaseModel):
+    orden_id: int
+    empleado_id: Optional[int] = None
+    descripcion: str
+
+class TareaUpdateEstado(BaseModel):
+    estado: str # "En Proceso" o "Terminada"

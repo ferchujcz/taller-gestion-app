@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from backend.database import SessionLocal
 from backend import models, schemas
 from datetime import datetime
+from backend.dependencies import obtener_taller_actual
 
 router = APIRouter()
 
@@ -13,84 +14,26 @@ def get_db():
     finally:
         db.close()
 
-# --- RUTAS DE GESTIÓN DE EMPLEADOS ---
-
 @router.post("/empleados/")
-def crear_empleado(empleado: schemas.EmpleadoCreate, db: Session = Depends(get_db)):
-    nuevo_empleado = models.Empleado(nombre=empleado.nombre, documento=empleado.documento, puesto=empleado.puesto)
+def crear_empleado(empleado: schemas.EmpleadoCreate, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    nuevo_empleado = models.Empleado(
+        taller_id=taller_actual,
+        nombre=empleado.nombre, 
+        documento=empleado.documento, 
+        puesto=empleado.puesto
+    )
     db.add(nuevo_empleado)
     db.commit()
     db.refresh(nuevo_empleado)
     return nuevo_empleado
 
 @router.get("/empleados/")
-def obtener_empleados(db: Session = Depends(get_db)):
-    return db.query(models.Empleado).all()
-
-# --- RUTA DE ASISTENCIA (Lógica del QR) ---
-
-@router.post("/asistencia/fichar")
-def registrar_fichada(fichada: schemas.RegistroAsistenciaCreate, db: Session = Depends(get_db)):
-    # 1. Buscar al empleado por el DNI (que viene del QR)
-    empleado = db.query(models.Empleado).filter(models.Empleado.documento == fichada.documento).first()
-    if not empleado:
-        raise HTTPException(status_code=404, detail="Empleado no encontrado con ese QR")
-        
-    ahora = datetime.utcnow()
-    fecha_hoy = ahora.date()
-    
-    # 2. Buscar si tiene una fichada de ENTRADA abierta el día de hoy
-    fichada_abierta = db.query(models.RegistroAsistencia).filter(
-        models.RegistroAsistencia.empleado_id == empleado.id,
-        models.RegistroAsistencia.fecha == fecha_hoy,
-        models.RegistroAsistencia.hora_salida == None
-    ).first()
-    
-    if fichada_abierta:
-        # SI TIENE ENTRADA ABIERTA, FICHAMOS SALIDA
-        fichada_abierta.hora_salida = ahora
-        
-        # Calcular el tiempo trabajado
-        diferencia = ahora - fichada_abierta.hora_entrada
-        fichada_abierta.segundos_trabajados = int(diferencia.total_seconds())
-        
-        db.commit()
-        db.refresh(fichada_abierta)
-        
-        horas_trabajadas = round(fichada_abierta.segundos_trabajados / 3600, 2)
-        return {"status": "success", "mensaje": f"Salida registrada para {empleado.nombre}. Horas trabajadas hoy: {horas_trabajadas}"}
-        
-    else:
-        # SI NO TIENE ENTRADA ABIERTA, FICHAMOS ENTRADA
-        nueva_entrada = models.RegistroAsistencia(empleado_id=empleado.id, fecha=fecha_hoy, hora_entrada=ahora)
-        db.add(nueva_entrada)
-        db.commit()
-        
-        return {"status": "success", "mensaje": f"Entrada registrada para {empleado.nombre}"}
-
-# --- RUTA PARA EL DASHBOARD: Obtener quién está trabajando ahora ---
-@router.get("/asistencia/presentes")
-def obtener_empleados_presentes(db: Session = Depends(get_db)):
-    ahora = datetime.utcnow()
-    fecha_hoy = ahora.date()
-    
-    # Buscamos registros de hoy sin hora de salida
-    registros_abiertos = db.query(models.RegistroAsistencia).filter(
-        models.RegistroAsistencia.fecha == fecha_hoy,
-        models.RegistroAsistencia.hora_salida == None
-    ).all()
-    
-    presentes = []
-    for reg in registros_abiertos:
-        presentes.append({
-            "nombre": reg.empleado.nombre,
-            "hora_entrada": reg.hora_entrada
-        })
-    return presentes
+def obtener_empleados(db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    return db.query(models.Empleado).filter(models.Empleado.taller_id == taller_actual).all()
 
 @router.put("/{empleado_id}")
-def editar_empleado(empleado_id: int, empleado: schemas.EmpleadoCreate, db: Session = Depends(get_db)):
-    emp = db.query(models.Empleado).filter(models.Empleado.id == empleado_id).first()
+def editar_empleado(empleado_id: int, empleado: schemas.EmpleadoCreate, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    emp = db.query(models.Empleado).filter(models.Empleado.id == empleado_id, models.Empleado.taller_id == taller_actual).first()
     if emp:
         emp.nombre = empleado.nombre
         emp.documento = empleado.documento
@@ -100,50 +43,65 @@ def editar_empleado(empleado_id: int, empleado: schemas.EmpleadoCreate, db: Sess
     return emp
 
 @router.delete("/{empleado_id}")
-def eliminar_empleado(empleado_id: int, db: Session = Depends(get_db)):
-    emp = db.query(models.Empleado).filter(models.Empleado.id == empleado_id).first()
+def eliminar_empleado(empleado_id: int, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    emp = db.query(models.Empleado).filter(models.Empleado.id == empleado_id, models.Empleado.taller_id == taller_actual).first()
     if emp:
         db.delete(emp)
         db.commit()
     return {"status": "ok"}
 
-# Cuando el empleado vuelve a fichar (Salida)
-@router.post("/fichar")
-def fichar_empleado(datos: dict, db: Session = Depends(get_db)):
-    # Buscar si tiene una entrada sin salida hoy
-    asistencia_abierta = db.query(models.Asistencia).filter(
-        models.Asistencia.documento == datos['documento'],
-        models.Asistencia.hora_salida == None
+@router.post("/asistencia/fichar")
+def registrar_fichada(fichada: schemas.RegistroAsistenciaCreate, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    empleado = db.query(models.Empleado).filter(models.Empleado.documento == fichada.documento, models.Empleado.taller_id == taller_actual).first()
+    if not empleado:
+        raise HTTPException(status_code=404, detail="Empleado no encontrado")
+        
+    ahora = datetime.utcnow()
+    fecha_hoy = ahora.date()
+    
+    fichada_abierta = db.query(models.RegistroAsistencia).filter(
+        models.RegistroAsistencia.empleado_id == empleado.id,
+        models.RegistroAsistencia.taller_id == taller_actual,
+        models.RegistroAsistencia.fecha == fecha_hoy,
+        models.RegistroAsistencia.hora_salida == None
     ).first()
     
-    if asistencia_abierta:
-        asistencia_abierta.hora_salida = datetime.datetime.utcnow()
+    if fichada_abierta:
+        fichada_abierta.hora_salida = ahora
+        diferencia = ahora - fichada_abierta.hora_entrada
+        fichada_abierta.segundos_trabajados = int(diferencia.total_seconds())
         db.commit()
-        return {"mensaje": "Salida registrada correctamente. Turno cerrado."}
+        horas_trabajadas = round(fichada_abierta.segundos_trabajados / 3600, 2)
+        return {"status": "success", "mensaje": f"Salida registrada para {empleado.nombre}. Horas trabajadas hoy: {horas_trabajadas}"}
     else:
-        # Ficha entrada nueva
-        nueva = models.Asistencia(documento=datos['documento'])
-        db.add(nueva)
+        nueva_entrada = models.RegistroAsistencia(taller_id=taller_actual, empleado_id=empleado.id, fecha=fecha_hoy, hora_entrada=ahora)
+        db.add(nueva_entrada)
         db.commit()
-        return {"mensaje": "Entrada registrada correctamente."}
-# Obtener TODO el historial de fichadas para el reporte mensual
-@router.get("/asistencia/")
-def obtener_historial_asistencia(db: Session = Depends(get_db)):
-    asistencias = db.query(models.RegistroAsistencia).all()
-    resultado = []
+        return {"status": "success", "mensaje": f"Entrada registrada para {empleado.nombre}"}
+
+@router.get("/asistencia/presentes")
+def obtener_empleados_presentes(db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    fecha_hoy = datetime.utcnow().date()
+    registros_abiertos = db.query(models.RegistroAsistencia).filter(
+        models.RegistroAsistencia.taller_id == taller_actual,
+        models.RegistroAsistencia.fecha == fecha_hoy,
+        models.RegistroAsistencia.hora_salida == None
+    ).all()
     
+    presentes = [{"nombre": reg.empleado.nombre, "hora_entrada": reg.hora_entrada} for reg in registros_abiertos]
+    return presentes
+
+@router.get("/asistencia/")
+def obtener_historial_asistencia(db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    asistencias = db.query(models.RegistroAsistencia).filter(models.RegistroAsistencia.taller_id == taller_actual).all()
+    resultado = []
     for a in asistencias:
-        # Extraemos el nombre del empleado directamente desde la relación de la base de datos
-        nombre_emp = a.empleado.nombre if a.empleado else "Desconocido"
-        dni_emp = a.empleado.documento if a.empleado else "Sin DNI"
-        
         resultado.append({
             "id": a.id,
             "empleado_id": a.empleado_id,
-            "nombre": nombre_emp,
-            "documento": dni_emp,
+            "nombre": a.empleado.nombre if a.empleado else "Desconocido",
+            "documento": a.empleado.documento if a.empleado else "Sin DNI",
             "hora_entrada": a.hora_entrada,
             "hora_salida": a.hora_salida
         })
-        
     return resultado

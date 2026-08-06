@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from backend.database import SessionLocal
 from backend import models, schemas
+from backend.dependencies import obtener_taller_actual
 
 router = APIRouter()
 
@@ -13,22 +14,21 @@ def get_db():
     finally:
         db.close()
 
-# --- CATÁLOGO ---
 @router.get("/catalogo", response_model=List[schemas.ServicioCatalogo])
-def obtener_catalogo(db: Session = Depends(get_db)):
-    return db.query(models.ServicioCatalogo).all()
+def obtener_catalogo(db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    return db.query(models.ServicioCatalogo).filter(models.ServicioCatalogo.taller_id == taller_actual).all()
 
 @router.post("/catalogo", response_model=schemas.ServicioCatalogo)
-def crear_servicio(servicio: schemas.ServicioCatalogoBase, db: Session = Depends(get_db)):
-    nuevo = models.ServicioCatalogo(**servicio.dict())
+def crear_servicio(servicio: schemas.ServicioCatalogoBase, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    nuevo = models.ServicioCatalogo(**servicio.dict(), taller_id=taller_actual)
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
     return nuevo
 
 @router.put("/catalogo/{id}", response_model=schemas.ServicioCatalogo)
-def editar_servicio(id: int, servicio: schemas.ServicioCatalogoBase, db: Session = Depends(get_db)):
-    serv = db.query(models.ServicioCatalogo).filter(models.ServicioCatalogo.id == id).first()
+def editar_servicio(id: int, servicio: schemas.ServicioCatalogoBase, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    serv = db.query(models.ServicioCatalogo).filter(models.ServicioCatalogo.id == id, models.ServicioCatalogo.taller_id == taller_actual).first()
     if serv:
         serv.categoria = servicio.categoria
         serv.nombre = servicio.nombre
@@ -38,29 +38,28 @@ def editar_servicio(id: int, servicio: schemas.ServicioCatalogoBase, db: Session
     return serv
 
 @router.delete("/catalogo/{id}")
-def eliminar_servicio(id: int, db: Session = Depends(get_db)):
-    serv = db.query(models.ServicioCatalogo).filter(models.ServicioCatalogo.id == id).first()
+def eliminar_servicio(id: int, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    serv = db.query(models.ServicioCatalogo).filter(models.ServicioCatalogo.id == id, models.ServicioCatalogo.taller_id == taller_actual).first()
     if serv:
         db.delete(serv)
         db.commit()
     return {"status": "ok"}
 
-# --- BOXES ---
 @router.get("/boxes", response_model=List[schemas.BoxTaller])
-def obtener_boxes(db: Session = Depends(get_db)):
-    return db.query(models.BoxTaller).all()
+def obtener_boxes(db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    return db.query(models.BoxTaller).filter(models.BoxTaller.taller_id == taller_actual).all()
 
 @router.post("/boxes", response_model=schemas.BoxTaller)
-def crear_box(box: schemas.BoxTallerBase, db: Session = Depends(get_db)):
-    nuevo = models.BoxTaller(**box.dict())
+def crear_box(box: schemas.BoxTallerBase, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    nuevo = models.BoxTaller(**box.dict(), taller_id=taller_actual)
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
     return nuevo
 
 @router.delete("/boxes/{id}")
-def eliminar_box(id: int, db: Session = Depends(get_db)):
-    box = db.query(models.BoxTaller).filter(models.BoxTaller.id == id).first()
+def eliminar_box(id: int, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    box = db.query(models.BoxTaller).filter(models.BoxTaller.id == id, models.BoxTaller.taller_id == taller_actual).first()
     if box:
         db.delete(box)
         db.commit()

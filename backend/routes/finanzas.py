@@ -1,66 +1,41 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from backend.database import SessionLocal
+from backend.database import get_db
 from backend import models, schemas
+from backend.dependencies import obtener_taller_actual
+from pydantic import BaseModel
+from typing import Optional
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+class EstadoTurnoUpdate(BaseModel):
+    estado: str
 
-# --- 1. RUTAS PARA PRESUPUESTOS (Ítems de las Órdenes) ---
+@router.get("/turnos/", response_model=list[schemas.TurnoResponse], tags=["Agenda y Turnos"])
+def obtener_turnos(db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    return db.query(models.Turno).filter(models.Turno.taller_id == taller_actual).order_by(models.Turno.fecha_hora).all()
 
-@router.post("/ordenes/{orden_id}/detalles")
-def agregar_detalle_orden(orden_id: int, detalle: schemas.DetalleOrdenCreate, db: Session = Depends(get_db)):
-    orden = db.query(models.OrdenTrabajo).filter(models.OrdenTrabajo.id == orden_id).first()
-    if not orden:
-        raise HTTPException(status_code=404, detail="Orden no encontrada")
-        
-    nuevo_detalle = models.DetalleOrden(
-        orden_id=orden_id,
-        descripcion=detalle.descripcion,
-        cantidad=detalle.cantidad,
-        precio_unitario=detalle.precio_unitario
+@router.post("/turnos/", response_model=schemas.TurnoResponse, tags=["Agenda y Turnos"])
+def agendar_turno(turno: schemas.TurnoCreate, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    nuevo_turno = models.Turno(
+        taller_id=taller_actual, 
+        fecha_hora=turno.fecha_hora,
+        cliente_nombre=turno.cliente_nombre,
+        vehiculo=turno.vehiculo,
+        motivo=turno.motivo,
+        estado="Pendiente"
     )
-    db.add(nuevo_detalle)
+    db.add(nuevo_turno)
     db.commit()
-    db.refresh(nuevo_detalle)
-    return nuevo_detalle
+    db.refresh(nuevo_turno)
+    return nuevo_turno
 
-@router.get("/ordenes/{orden_id}/detalles")
-def obtener_detalles_orden(orden_id: int, db: Session = Depends(get_db)):
-    detalles = db.query(models.DetalleOrden).filter(models.DetalleOrden.orden_id == orden_id).all()
-    return detalles
-
-
-# --- 2. RUTAS PARA LA CAJA ---
-
-@router.post("/caja/")
-def registrar_movimiento(movimiento: schemas.MovimientoCajaCreate, db: Session = Depends(get_db)):
-    nuevo_movimiento = models.MovimientoCaja(
-        tipo=movimiento.tipo,
-        metodo_pago=movimiento.metodo_pago,
-        monto=movimiento.monto,
-        motivo=movimiento.motivo
-    )
-    db.add(nuevo_movimiento)
+@router.put("/turnos/{turno_id}", tags=["Agenda y Turnos"])
+def actualizar_estado_turno(turno_id: int, datos: EstadoTurnoUpdate, db: Session = Depends(get_db), taller_actual: int = Depends(obtener_taller_actual)):
+    turno_db = db.query(models.Turno).filter(models.Turno.id == turno_id, models.Turno.taller_id == taller_actual).first()
+    if not turno_db:
+        raise HTTPException(status_code=404, detail="Turno no encontrado o no pertenece a su taller")
+    
+    turno_db.estado = datos.estado
     db.commit()
-    db.refresh(nuevo_movimiento)
-    return nuevo_movimiento
-
-@router.get("/caja/")
-def obtener_movimientos_caja(db: Session = Depends(get_db)):
-    return db.query(models.MovimientoCaja).order_by(models.MovimientoCaja.fecha.desc()).all()
-
-
-@router.delete("/{movimiento_id}")
-def eliminar_movimiento(movimiento_id: int, db: Session = Depends(get_db)):
-    mov = db.query(models.MovimientoCaja).filter(models.MovimientoCaja.id == movimiento_id).first()
-    if mov:
-        db.delete(mov)
-        db.commit()
-    return {"status": "ok"}
+    return {"mensaje": "Estado actualizado"}
