@@ -105,3 +105,63 @@
 .tv-task { background: #27272a; padding: 12px; border-radius: 6px; margin-bottom: 8px; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
 .tv-task-proceso { border-left: 5px solid var(--warning); }
 .tv-task-pendiente { border-left: 5px solid var(--danger); opacity: 0.6; }
+
+/* --- ADAPTACIÓN PARA CELULARES (MOBILE FIRST) --- */
+.btn-menu-movil, .btn-cerrar-menu {
+    display: none; /* Ocultos en computadora */
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -100%; /* Escondido fuera de la pantalla por defecto */
+        top: 0;
+        height: 100vh;
+        z-index: 9999;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+    }
+    
+    .sidebar.abierto {
+        left: 0; /* Aparece cuando tiene esta clase */
+    }
+
+    .content-area {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 10px;
+    }
+
+    /* Botón flotante para abrir el menú en el celu */
+    .btn-menu-movil {
+        display: flex;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: var(--primary, #e60000);
+        color: white;
+        border-radius: 50%;
+        width: 55px;
+        height: 55px;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        z-index: 9998;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        border: none;
+        cursor: pointer;
+    }
+
+    /* Botoncito 'X' para cerrar el menú desde adentro */
+    .btn-cerrar-menu {
+        display: block;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: transparent;
+        color: white;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+}

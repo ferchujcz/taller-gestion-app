@@ -91,6 +91,7 @@
             <div class="sidebar-header">
                 <img id="menu-logo" class="sidebar-logo" src="">
                 <span id="menu-nombre-taller" class="nombre-taller">TALLER</span>
+                <button class="btn-cerrar-menu" onclick="cerrarMenuMovil()"><i class="ph ph-x"></i></button>
             </div>
             <div class="menu-item active" onclick="cambiarSeccion('dashboard', this)"><i class="ph ph-squares-four"></i> Dashboard y Analítica</div>
             <div class="menu-item" onclick="cambiarSeccion('clientes', this); cargarClientesCRM();"><i class="ph ph-address-book"></i> Clientes e Historial</div>
@@ -558,5 +559,6 @@
             <h2 style="text-align: center; color: gray; width: 100%;">Cargando operaciones...</h2>
         </div>
     </div>
+    <button class="btn-menu-movil" onclick="abrirMenuMovil()"><i class="ph ph-list"></i></button>
 </body>
 </html>

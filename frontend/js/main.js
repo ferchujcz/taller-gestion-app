@@ -1087,3 +1087,22 @@ async function actualizarPantallaTV() {
         });
     } catch(e) { console.warn("Error refrescando TV"); }
 }
+
+// --- CONTROL DEL MENÚ EN CELULARES ---
+function abrirMenuMovil() {
+    document.getElementById('sidebar').classList.add('abierto');
+}
+
+function cerrarMenuMovil() {
+    document.getElementById('sidebar').classList.remove('abierto');
+}
+
+// Opcional: Que el menú se cierre solo cuando eligen una opción en el celular
+function cambiarSeccion(idSeccion, elementoMenu) {
+    // ... acá va tu lógica actual para cambiar de pestaña ...
+    
+    // Agregá esto al final de tu función cambiarSeccion actual:
+    if (window.innerWidth <= 768) {
+        cerrarMenuMovil();
+    }
+}
