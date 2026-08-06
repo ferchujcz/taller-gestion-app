@@ -112,6 +112,45 @@
 }
 
 @media (max-width: 768px) {
+    /* 1. Evitar que la pantalla se desborde hacia los costados */
+    body, html {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* 2. Achicar los textos gigantes (como el CARGANDO o títulos) */
+    h1 { font-size: 2rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3 { font-size: 1.2rem !important; }
+
+    /* 3. Ajustar las tarjetas del Dashboard para que se apilen hacia abajo y no se corten */
+    .row { 
+        flex-direction: column !important; 
+        gap: 15px;
+    }
+    
+    .col, .card, .stat-card { 
+        width: 100% !important; 
+        min-width: 100% !important; 
+        margin: 0 !important; 
+        box-sizing: border-box; 
+    }
+
+    /* 4. Ajustar el contenedor principal para ganar espacio */
+    .content-area {
+        padding: 15px 10px !important; /* Menos margen en los bordes */
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* 5. Traer el botón flotante bien al frente para que NADA lo tape */
+    .btn-menu-movil {
+        bottom: 20px;
+        right: 20px;
+        z-index: 999999 !important; /* Z-index extremo */
+        transform: scale(0.9); /* Un toque más chico para que no estorbe */
+    }
+
     .sidebar {
         position: fixed;
         left: -100%; /* Escondido fuera de la pantalla por defecto */
