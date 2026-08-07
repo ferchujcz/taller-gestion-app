@@ -1,4 +1,3 @@
-
 // Se ejecuta apenas intenta cargar la página
 document.addEventListener("DOMContentLoaded", function() {
     // Buscamos la llave de acceso en la memoria del navegador
@@ -7,10 +6,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // Si no hay llave, y no estamos ya en la pantalla de login, lo pateamos
     if (!tokenAcceso && !window.location.href.includes("login.html")) {
         console.warn("Acceso denegado. Redirigiendo al login...");
-        // Cambiá "login.html" por la ruta exacta de tu pantalla de ingreso si se llama distinto
         window.location.href = "login.html"; 
     }
 });
+
 // INTERCEPTOR GLOBAL DE FETCH BLINDADO
 const originalFetch = window.fetch;
 window.fetch = async function(url, options = {}) {
@@ -36,33 +35,12 @@ window.fetch = async function(url, options = {}) {
     }
 };
 
-// Cuando el usuario presiona ingresar y el servidor responde OK:
-const respuesta = await fetch('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: correo, password: clave })
-});
-
-const datos = await respuesta.json();
-
-if (respuesta.ok) {
-    // 🔑 GUARDAMOS LA LLAVE EXACTA QUE LEE EL INTERCEPTOR
-    localStorage.setItem("token", datos.access_token);
-    
-    // Redirigimos al Dashboard principal
-    window.location.href = "/";
-} else {
-    alert("Error: " + datos.detail);
-}
 // Función extra: Botón para Cerrar Sesión
 function cerrarSesion() {
     localStorage.removeItem("token");
     window.location.href = "login.html";
 }
 
-    
-
-    
     // ==========================================
     // VARIABLES GLOBALES PARA GRÁFICOS Y BUSCADORES
     // ==========================================
