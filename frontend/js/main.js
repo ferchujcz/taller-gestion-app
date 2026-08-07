@@ -11,18 +11,49 @@ document.addEventListener("DOMContentLoaded", function() {
         window.location.href = "login.html"; 
     }
 });
-// INTERceptor GLOBAL PARA FETCH: Inyecta el token de seguridad automáticamente en cada petición
+// INTERCEPTOR GLOBAL DE FETCH BLINDADO
 const originalFetch = window.fetch;
 window.fetch = async function(url, options = {}) {
+    options.headers = options.headers || {};
+    
+    // Intentamos recuperar el token
     const token = localStorage.getItem("token");
     if (token) {
-        options.headers = {
-            ...options.headers,
-            "Authorization": `Bearer ${token}`
-        };
+        options.headers["Authorization"] = `Bearer ${token}`;
     }
-    return originalFetch(url, options);
+    
+    try {
+        const response = await originalFetch(url, options);
+        // Si el servidor nos rechaza con 401 y no estamos ya en el login, lo redirigimos
+        if (response.status === 401 && !window.location.href.includes("login.html")) {
+            console.warn("Sesión expirada o no iniciada. Redirigiendo al login...");
+            window.location.href = "login.html";
+            return response;
+        }
+        return response;
+    } catch (error) {
+        throw error;
+    }
 };
+
+// Cuando el usuario presiona ingresar y el servidor responde OK:
+const respuesta = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: correo, password: clave })
+});
+
+const datos = await respuesta.json();
+
+if (respuesta.ok) {
+    // 🔑 GUARDAMOS LA LLAVE EXACTA QUE LEE EL INTERCEPTOR
+    localStorage.setItem("token", datos.access_token);
+    
+    // Redirigimos al Dashboard principal
+    window.location.href = "/";
+} else {
+    alert("Error: " + datos.detail);
+}
 // Función extra: Botón para Cerrar Sesión
 function cerrarSesion() {
     localStorage.removeItem("token");
