@@ -14,7 +14,7 @@ from backend.database import engine, get_db
 from backend import models
 from backend.schemas import RegistroSaaS
 from backend.models import Usuario, Taller, TallerConfig, MovimientoCaja, Inventario, Cliente
-from backend.routes import vehiculos, ordenes, configuracion, finanzas, empleados, gestion, turnos, clientes, turnos, tareas, asistencia, caja 
+from backend.routes import vehiculos, ordenes, configuracion, finanzas, empleados, gestion, turnos, clientes, tareas, asistencia, caja
 
 # ==========================================
 # CONFIGURACIÓN DE SEGURIDAD
