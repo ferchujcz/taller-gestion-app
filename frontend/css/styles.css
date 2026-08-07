@@ -204,3 +204,45 @@
         cursor: pointer;
     }
 }
+/* --- AJUSTES PARA TABLETS (Entre 768px y 1024px) --- */
+@media (max-width: 1024px) {
+    .content-area {
+        padding: 15px;
+    }
+    h1 { font-size: 2.2rem !important; }
+    h2 { font-size: 1.8rem !important; }
+    /* Las tarjetas se adaptan a 2 columnas en lugar de 3 o 4 */
+    .col, .stat-card {
+        flex: 1 1 45%; 
+    }
+}
+
+/* --- SOLUCIÓN PARA LAS TABLAS EN CELULARES --- */
+@media (max-width: 768px) {
+    /* Envolvemos las tablas para que tengan scroll horizontal interno */
+    .table-container {
+        width: 100%;
+        overflow-x: auto; /* Permite deslizar con el dedo */
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 15px;
+        border: 1px solid #333; /* Borde sutil para delimitar el área */
+        border-radius: 5px;
+    }
+
+    /* Achicamos la letra de las tablas para que entre más info */
+    table {
+        width: 100%;
+        min-width: 600px; /* Fuerza a la tabla a mantener un tamaño legible */
+        font-size: 0.85rem;
+    }
+
+    th, td {
+        padding: 8px 5px; /* Menos espacio vacío entre celdas */
+    }
+    
+    /* Achicamos botones dentro de las tablas */
+    td button {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+}

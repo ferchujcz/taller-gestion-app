@@ -19,11 +19,7 @@ function cerrarSesion() {
 }
 
     
-    // Arranca la validación apenas carga la página web
-    window.onload = function() {
-        verificarToken(); // O el nombre de la función que verifica si ya inició sesión
-    };
-    
+
     
     // ==========================================
     // VARIABLES GLOBALES PARA GRÁFICOS Y BUSCADORES
@@ -59,7 +55,10 @@ function cerrarSesion() {
                     document.getElementById('mecanico_panel_trabajo').style.display = 'block'; 
                     document.getElementById('mecanico_auto_trabajando').innerText = `${ordenEnEsteBox.patente} | ${ordenEnEsteBox.vehiculo_desc}`; 
                     document.getElementById('mecanico_orden_activa').value = ordenEnEsteBox.id; 
-                    cargarItemsMecanico(ordenEnEsteBox.id); 
+                    cargarItemsMecanico(ordenEnEsteBox.id);
+                    // ---> LÍNEA QUE FALTA AGREGAR <---
+                    cargarTareasDeMecanicoEnCelular(ordenEnEsteBox.id); 
+                
                 } else { 
                     document.getElementById('mecanico_panel_espera').style.display = 'block'; 
                     document.getElementById('mecanico_panel_trabajo').style.display = 'none'; 
@@ -238,7 +237,6 @@ function cerrarSesion() {
     // --- SISTEMA INSTITUCIONAL E INICIO ---
     let logoBase64Actual = null; let ordenActualParaPDF = null; let latamCarsDB = null; let claveMarcaDetectada = ""; let claveModeloDetectada = ""; let vehiculosLocales = [];
     function cerrarBienvenida() { document.getElementById('splash-screen').style.opacity = '0'; setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 500); }
-    function cambiarSeccion(seccion, elementoMenu) { document.querySelectorAll('.section').forEach(x => x.classList.remove('active')); document.getElementById('sec-' + seccion).classList.add('active'); document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); elementoMenu.classList.add('active'); document.getElementById('titulo-seccion').innerHTML = elementoMenu.innerHTML; }
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('modo_oscuro', document.body.classList.contains('dark-mode')); if(chartFinanzas) chartFinanzas.update(); }
     if (localStorage.getItem('modo_oscuro') === 'true') document.body.classList.add('dark-mode');
     document.getElementById('input_logo').addEventListener('change', function(e) { const archivo = e.target.files[0]; if (archivo) { const reader = new FileReader(); reader.onload = function(ev) { logoBase64Actual = ev.target.result; document.getElementById('preview_logo').src = logoBase64Actual; document.getElementById('preview_logo').style.display = 'block'; }; reader.readAsDataURL(archivo); } });
