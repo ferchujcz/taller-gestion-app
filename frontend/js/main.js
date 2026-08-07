@@ -41,10 +41,28 @@ function cerrarSesion() {
     window.location.href = "login.html";
 }
 
+function mostrarNotificacion(mensaje, tipo = "info") {
+    const contenedor = document.getElementById("contenedor-notificaciones");
+    const toast = document.createElement("div");
+    const colorBg = tipo === "error" ? "#ef4444" : (tipo === "exito" ? "#10b981" : "#3b82f6");
+    toast.style.cssText = `background: ${colorBg}; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: bold; opacity: 0; transform: translateY(-20px); transition: all 0.3s ease;`;
+    toast.innerHTML = mensaje;
+    contenedor.appendChild(toast);
+    
+    // Animación de entrada
+    setTimeout(() => { toast.style.opacity = "1"; toast.style.transform = "translateY(0)"; }, 10);
+    // Destrucción luego de 4 segundos
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
     // ==========================================
     // VARIABLES GLOBALES PARA GRÁFICOS Y BUSCADORES
     // ==========================================
     let chartFinanzas = null;
+    window.tallerConfigGlobal = { nombre: "Mi Taller", direccion: "", telefono: "" };
     window.clientesCRMGlobal = [];
     window.empleadosGlobal = [];
     window.todasLasMarcasGlobales = []; // Para el buscador inteligente
@@ -131,7 +149,7 @@ function cerrarSesion() {
             if (!res.ok) throw new Error(await res.text());
             cancelarEdicionCatalogo(); 
             cargarCatalogoYBoxes(); 
-        } catch(e) { alert("Error al guardar: " + e.message); } 
+        } catch(e) { mostrarNotificacion("Error al guardar: " + e.message, "error"); } 
     });
     async function eliminarServicio(index) { if(confirm("¿Seguro que desea eliminar este servicio?")) { try { const idServicio = catalogoGlobal[index].id; await fetch(`/api/gestion/catalogo/${idServicio}`, { method: 'DELETE' }); cargarCatalogoYBoxes(); } catch(e) {} } }
     function actualizarSelectsDePresupuesto() { const selects = [document.getElementById('select_catalogo'), document.getElementById('select_catalogo_rapido')]; const agrupado = {}; catalogoGlobal.forEach(s => { if(!agrupado[s.categoria]) agrupado[s.categoria] = []; agrupado[s.categoria].push(s); }); selects.forEach(select => { if(!select) return; select.innerHTML = '<option value="">-- Seleccionar o Escribir Manual --</option>'; for (const [cat, servs] of Object.entries(agrupado)) { let optgroup = document.createElement('optgroup'); optgroup.label = cat; servs.forEach(s => { let opt = document.createElement('option'); opt.value = JSON.stringify(s); opt.textContent = `${s.nombre} - $${s.precio.toLocaleString('es-AR')}`; optgroup.appendChild(opt); }); select.appendChild(optgroup); } }); }
@@ -145,7 +163,7 @@ function cerrarSesion() {
             document.getElementById('formBoxesConfig').reset(); 
             cargarCatalogoYBoxes(); 
             cargarTablero(); 
-        } catch(e) { alert("Error al guardar Box: " + e.message); } 
+        } catch(e) { mostrarNotificacion("Error al guardar Box: " + e.message, "error"); } 
     });
     async function eliminarBox(index) { try{ const idBox = boxesGlobal[index].id; await fetch(`/api/gestion/boxes/${idBox}`, { method: 'DELETE' }); cargarCatalogoYBoxes(); cargarTablero(); } catch(e){} }
     
@@ -158,12 +176,33 @@ function cerrarSesion() {
     // --- CRM Y CLINICO MEJORADO ---
     async function cargarClientesCRM() { try { const res = await fetch('/api/clientes/'); if(!res.ok) throw new Error(); window.clientesCRMGlobal = await res.json(); renderizarListaCRM(window.clientesCRMGlobal); } catch(e) { console.error("Error CRM."); } }
     function filtrarCRM() { const texto = document.getElementById('buscador_crm').value.toLowerCase(); if(!window.clientesCRMGlobal) return; const filtrados = window.clientesCRMGlobal.filter(c => c.nombre.toLowerCase().includes(texto) || (c.telefono && c.telefono.toLowerCase().includes(texto)) ); renderizarListaCRM(filtrados); }
-    function renderizarListaCRM(lista) { const tbody = document.getElementById('lista_clientes_crm'); tbody.innerHTML = ''; if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan=\"2\" style=\"text-align:center; color:gray; padding: 20px;\">No se encontraron clientes.</td></tr>'; return; } lista.forEach(c => { tbody.innerHTML += `<tr><td><strong>${c.nombre}</strong><br><span style=\"color:gray; font-size:0.8rem;\">Tel: ${c.telefono||'N/A'}</span></td><td style=\"text-align:right;\"><button class=\"btn-dark\" style=\"padding: 5px 15px;\" onclick=\"verHistorialCliente(${c.id}, '${c.nombre}')\"><i class=\"ph ph-file-search\"></i> Ver Ficha</button></td></tr>`; }); }
-    
-    async function verHistorialCliente(idCliente, nombreCliente) { 
+    function renderizarListaCRM(lista) { 
+    const tbody = document.getElementById('lista_clientes_crm'); 
+    tbody.innerHTML = ''; 
+    if(lista.length === 0) { 
+        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:gray; padding: 20px;">No se encontraron clientes.</td></tr>'; 
+        return; 
+    } 
+    lista.forEach(c => { 
+        // Lógica visual para deudores
+        let htmlDeuda = '';
+        if (c.saldo_deuda > 0) {
+            htmlDeuda = `<br><span class="badge-deuda">⚠️ DEBE: $${c.saldo_deuda.toLocaleString('es-AR')}</span>`;
+        }
+        
+        tbody.innerHTML += `<tr>
+            <td><strong>${c.nombre}</strong><br><span style="color:gray; font-size:0.8rem;">Tel: ${c.telefono||'N/A'}</span>${htmlDeuda}</td>
+            <td style="text-align:right;">
+                <button class="btn-dark" style="padding: 5px 15px;" onclick="verHistorialCliente(${c.id}, '${c.nombre}', ${c.saldo_deuda || 0})"><i class="ph ph-file-search"></i> Ver Ficha</button>
+            </td>
+        </tr>`; 
+    }); 
+    }
+    async function verHistorialCliente(idCliente, nombreCliente, saldo_deuda = 0) { 
         document.getElementById('crm_nombre_cliente').innerText = nombreCliente; 
         const divHistorial = document.getElementById('crm_historial_datos'); 
         divHistorial.innerHTML = '<div style="text-align:center; padding:20px;"><i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i></div>'; 
+        
         try { 
             const resV = await fetch('/api/vehiculos/'); 
             const vehiculos = await resV.json(); 
@@ -172,13 +211,23 @@ function cerrarSesion() {
             const resO = await fetch('/api/ordenes/'); 
             const ordenes = await resO.json(); 
             
-            divHistorial.innerHTML = ''; 
+            // --- CARTEL ROJO SI DEBE PLATA ---
+            let headerDeuda = '';
+            if(saldo_deuda > 0) {
+                headerDeuda = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div><strong style="color: var(--danger); font-size: 1.2rem;">DEUDA PENDIENTE: $${saldo_deuda.toLocaleString('es-AR')}</strong><br><span style="color: gray; font-size: 0.85rem;">Monto acumulado por fiado.</span></div>
+                    <button class="btn-success" style="padding: 10px 20px;" onclick="abrirModalPagoDeuda(${idCliente}, '${nombreCliente}', ${saldo_deuda})"><i class="ph ph-money"></i> Cobrar Ahora</button>
+                </div>`;
+            }
+
+            divHistorial.innerHTML = headerDeuda; 
+            
             if(misVehiculos.length === 0) { 
-                divHistorial.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">Este cliente no tiene vehículos registrados.</p>'; 
+                divHistorial.innerHTML += '<p style="text-align:center; color:gray; padding:20px;">Este cliente no tiene vehículos registrados.</p>'; 
                 return; 
             } 
             
-            // Usamos un bucle for...of para poder buscar los detalles de cada orden
+            // ... (ACÁ SIGUE TU CÓDIGO NORMAL DEL FOR PARA PINTAR LOS VEHÍCULOS) ...
             for (const v of misVehiculos) { 
                 let html = `<div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; overflow: hidden;"><div style="background: var(--dark); color: white; padding: 12px 20px; font-weight: 700; display:flex; justify-content:space-between;"><span>${v.marca} ${v.modelo}</span> <span>Patente: <span style="color:var(--primary);">${v.patente}</span></span></div><ul style="list-style:none; padding:0; margin:0;">`; 
                 
@@ -192,7 +241,6 @@ function cerrarSesion() {
                         const colorEst = o.estado === 'Entregado' ? 'color:var(--primary);' : (o.estado === 'Terminado' ? 'color:var(--success);' : 'color:var(--warning);'); 
                         const fechaFormateada = o.fecha_ingreso ? new Date(o.fecha_ingreso).toLocaleDateString('es-AR') : 'Fecha Desconocida';
                         
-                        // BUSCAR LOS TRABAJOS (DETALLES) DE ESTE INGRESO
                         let listaTrabajos = "";
                         try {
                             const resDetalles = await fetch(`/api/ordenes/${o.id}/detalles`);
@@ -226,33 +274,45 @@ function cerrarSesion() {
     }
 
     // --- FLUJO DEL MECANICO ---
-    async function mecanicoIngresarVehiculo() { const idOrden = document.getElementById('mecanico_vehiculo_espera').value; const nombreBox = document.getElementById('mecanico_nombre_box').innerText; if(!idOrden) { alert("Seleccione un vehículo."); return; } try { await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'En Box', ubicacion: nombreBox }) }); detectarVistasMoviles(); } catch(e) {} }
+    async function mecanicoIngresarVehiculo() { const idOrden = document.getElementById('mecanico_vehiculo_espera').value; const nombreBox = document.getElementById('mecanico_nombre_box').innerText; if(!idOrden) { mostrarNotificacion("Seleccione un vehículo.", "error"); return; } try { await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'En Box', ubicacion: nombreBox }) }); detectarVistasMoviles(); } catch(e) {} }
     async function mecanicoAgregarRepuesto() { 
         const idOrden = document.getElementById('mecanico_orden_activa').value; 
         const tipo = document.getElementById('mec_item_tipo').value;
         const desc = document.getElementById('mec_item_desc').value; 
-        const cant = document.getElementById('mec_item_cant').value; 
+        const cant = parseInt(document.getElementById('mec_item_cant').value) || 1; 
         const notas = document.getElementById('mec_item_notas').value;
         
-        if(!desc) { alert("Debe escribir una descripción."); return; }
+        if(!desc) { mostrarNotificacion("Debe escribir una descripción.", "error"); return; }
         
         const prefijo = tipo === 'REPUESTO' ? '📦 [Repuesto]' : '🔧 [Mano de Obra]';
         const descripcionFinal = notas ? `${prefijo} ${desc} (Notas: ${notas})` : `${prefijo} ${desc}`;
         
         try {
+            // 1. Guardar en el presupuesto de la orden
             await fetch(`/api/ordenes/${idOrden}/detalles`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ descripcion: descripcionFinal, cantidad: parseInt(cant), precio_unitario: 0 }) 
+                body: JSON.stringify({ descripcion: descripcionFinal, cantidad: cant, precio_unitario: 0 }) 
             }); 
+
+            // 2. Si es REPUESTO, intentamos descontarlo del inventario
+            if (tipo === 'REPUESTO') {
+                const itemInv = inventarioGlobal.find(inv => inv.nombre.toLowerCase() === desc.toLowerCase());
+                if (itemInv) {
+                    // Llama a la ruta con el parámetro ?cantidad=X
+                    await fetch(`/api/inventario/${itemInv.id}/descontar?cantidad=${cant}`, { method: 'PUT', headers: {'Content-Type': 'application/json'} });
+                }
+            }
+
             document.getElementById('mec_item_desc').value = ''; 
             document.getElementById('mec_item_cant').value = '1'; 
             document.getElementById('mec_item_notas').value = ''; 
             cargarItemsMecanico(idOrden); 
-        } catch(e) { alert("Error al cargar el ítem."); }
+            mostrarNotificacion("Agregado a la orden", "exito");
+        } catch(e) { mostrarNotificacion("Error al cargar el ítem.", "error"); }
     }
     async function cargarItemsMecanico(id_orden) { const res = await fetch(`/api/ordenes/${id_orden}/detalles`); const det = await res.json(); const lista = document.getElementById('mecanico_lista_items'); lista.innerHTML = ''; if(det.length === 0) lista.innerHTML = '<p style=\"color:gray; font-size:0.9rem;\">Sin trabajos anotados aún.</p>'; det.forEach(i => { lista.innerHTML += `<div class=\"mec-item\"><div class=\"mec-item-header\"><span>${i.descripcion}</span><span style=\"color:var(--primary);\">x${i.cantidad}</span></div></div>`; }); }
-    async function mecanicoTerminarTrabajo() { const idOrden = document.getElementById('mecanico_orden_activa').value; if(confirm("¿Seguro que terminaste de trabajar en este auto? Se sacará del box.")) { await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'Terminado', ubicacion: 'Playa' }) }); alert("Trabajo Terminado. El administrador fue notificado."); detectarVistasMoviles(); } }
+    async function mecanicoTerminarTrabajo() { const idOrden = document.getElementById('mecanico_orden_activa').value; if(confirm("¿Seguro que terminaste de trabajar en este auto? Se sacará del box.")) { await fetch(`/api/ordenes/${idOrden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: 'Terminado', ubicacion: 'Playa' }) }); mostrarNotificacion("Trabajo Terminado. El administrador fue notificado.", "exito"); detectarVistasMoviles(); } }
 
     // --- SISTEMA INSTITUCIONAL E INICIO ---
     let logoBase64Actual = null; let ordenActualParaPDF = null; let latamCarsDB = null; let claveMarcaDetectada = ""; let claveModeloDetectada = ""; let vehiculosLocales = [];
@@ -261,19 +321,25 @@ function cerrarSesion() {
     if (localStorage.getItem('modo_oscuro') === 'true') document.body.classList.add('dark-mode');
     document.getElementById('input_logo').addEventListener('change', function(e) { const archivo = e.target.files[0]; if (archivo) { const reader = new FileReader(); reader.onload = function(ev) { logoBase64Actual = ev.target.result; document.getElementById('preview_logo').src = logoBase64Actual; document.getElementById('preview_logo').style.display = 'block'; }; reader.readAsDataURL(archivo); } });
 
-    async function cargarConfiguracion() { 
+   async function cargarConfiguracion() { 
         try { 
             const res = await fetch('/api/configuracion/'); 
             if(!res.ok) return; 
             const config = await res.json(); 
             if (!config || Object.keys(config).length === 0) return; 
             
+            // Guardamos en la memoria global para los PDF
+            window.tallerConfigGlobal.nombre = config.nombre_taller || "";
+            window.tallerConfigGlobal.direccion = config.direccion || "";
+            window.tallerConfigGlobal.telefono = config.telefono || "";
+            
             const nombreTaller = config.nombre_taller || "Nombre No Configurado"; 
+            
+            // Rellenamos los inputs visuales
             document.getElementById('conf_nombre').value = config.nombre_taller || ''; 
             document.getElementById('conf_direccion').value = config.direccion || ''; 
             document.getElementById('conf_telefono').value = config.telefono || ''; 
             document.getElementById('conf_email').value = config.email || ''; 
-            document.getElementById('splash-nombre-taller').innerText = nombreTaller; 
             document.getElementById('menu-nombre-taller').innerText = nombreTaller; 
             document.getElementById('titulo-pestana').innerText = nombreTaller + " | Gestión"; 
             
@@ -283,8 +349,6 @@ function cerrarSesion() {
                 document.getElementById('preview_logo').style.display = 'block'; 
                 document.getElementById('menu-logo').src = config.logo_b64; 
                 document.getElementById('menu-logo').style.display = 'block'; 
-                document.getElementById('splash-logo').src = config.logo_b64; 
-                document.getElementById('splash-logo').style.display = 'block'; 
             } 
         } catch(e) { console.warn("Aún no hay configuración guardada."); } 
     }
@@ -294,9 +358,9 @@ function cerrarSesion() {
             const datos = { nombre_taller: document.getElementById('conf_nombre').value, direccion: document.getElementById('conf_direccion').value, telefono: document.getElementById('conf_telefono').value, email: document.getElementById('conf_email').value, logo_b64: logoBase64Actual }; 
             const res = await fetch('/api/configuracion/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) }); 
             if (!res.ok) throw new Error(await res.text());
-            alert("✅ ¡Configuración Institucional guardada!"); 
+            mostrarNotificacion("✅ ¡Configuración Institucional guardada!", "exito"); 
             cargarConfiguracion(); 
-        } catch (e) { alert("Error al guardar la configuración: " + e.message);} 
+        } catch (e) { mostrarNotificacion("Error al guardar la configuración: " + e.message, "error");} 
     }
 
     // --- SISTEMA GENERAL Y DB ---
@@ -363,6 +427,7 @@ function cerrarSesion() {
         // Llama a tu función original
         guardarIngreso(); 
     }
+    // 2. CORRECCIÓN DEL AÑO NULL EN LA RECEPCIÓN
     async function guardarIngreso() { 
         try {
             let id_dueno = document.getElementById('cliente_id').value; 
@@ -373,14 +438,18 @@ function cerrarSesion() {
                 const cliente = await resC.json(); 
                 id_dueno = cliente.id; 
             } 
-            if (!id_dueno) { alert("⚠️ Debe seleccionar un Cliente Existente o escribir uno Nuevo."); return; } 
+            if (!id_dueno) { mostrarNotificacion("⚠️ Debe seleccionar un Cliente Existente o escribir uno Nuevo.", "error"); return; } 
+            
             const anioForm = document.getElementById('anio').value; 
-            const resV = await fetch('/api/vehiculos/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ patente: document.getElementById('patente').value.toUpperCase(), marca: document.getElementById('recepcion_marca').value, modelo: document.getElementById('recepcion_modelo').value, anio: anioForm ? parseInt(anioForm) : null, cliente_id: parseInt(id_dueno)}) }); 
+            const anioValidado = anioForm ? parseInt(anioForm) : 0; // Evita el error Null enviando un 0 si está vacío
+
+            const resV = await fetch('/api/vehiculos/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ patente: document.getElementById('patente').value.toUpperCase(), marca: document.getElementById('recepcion_marca').value, modelo: document.getElementById('recepcion_modelo').value, anio: anioValidado, cliente_id: parseInt(id_dueno)}) }); 
             if (!resV.ok) throw new Error(await resV.text());
+            
             document.getElementById('formVehiculo').reset(); 
             cargarDatosGlobales(); 
-            alert("✅ Vehículo ingresado correctamente a Recepción."); 
-        } catch(e) { alert("Error al guardar vehículo: " + e.message); }
+            mostrarNotificacion("✅ Vehículo ingresado correctamente a Recepción.", "exito"); 
+        } catch(e) { mostrarNotificacion("Error al guardar vehículo", "error"); }
     }
 
     document.getElementById('formOrden').addEventListener('submit', async (e) => { 
@@ -403,26 +472,34 @@ function cerrarSesion() {
             if (!res.ok) throw new Error(await res.text());
             document.getElementById('formOrden').reset(); 
             document.getElementById('rec_detalles').value = ''; // Limpiar campo
-            alert("✅ Turno generado correctamente con su Checklist. Puede verlo en Espera.");
+            mostrarNotificacion("✅ Turno generado correctamente con su Checklist. Puede verlo en Espera.", "exito");
             cargarTablero(); 
-        } catch(e) { alert("Error al generar Orden: " + e.message); }
+        } catch(e) { mostrarNotificacion("Error al generar Orden: " + e.message, "error"); }
     });
     async function moverOrden(id_orden, estado, ubi = null) { let ubicacion = ubi || document.getElementById(`sel_box_${id_orden}`).value; await fetch(`/api/ordenes/${id_orden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: estado, ubicacion: ubicacion }) }); cargarTablero(); }
 
-    // --- BUSCADOR INTELIGENTE DE MARCAS Y MODELOS ---
+// 1. EL PARACAÍDAS PARA LAS MARCAS
     async function cargarMarcasDesdeAPI() { 
         try { 
             const res = await fetch('https://raw.githubusercontent.com/BayronDavid/latam-vehicle-db/main/vehicles_cars.json'); 
+            if(!res.ok) throw new Error("CORS o error de red");
             latamCarsDB = await res.json(); 
             if (Array.isArray(latamCarsDB) && latamCarsDB.length > 0) { 
                 const claves = Object.keys(latamCarsDB[0]); 
                 claveMarcaDetectada = claves.find(k => k.toLowerCase().includes('marc') || k.toLowerCase().includes('mak') || k.toLowerCase().includes('bran')) || claves[0]; 
                 claveModeloDetectada = claves.find(k => k.toLowerCase().includes('model') || k.toLowerCase().includes('mod')) || claves[1]; 
             } 
-            actualizarListaMarcas(); 
-        } catch (e) { } 
+        } catch (e) { 
+            console.warn("Usando base de marcas local de respaldo.");
+            // Fallback robusto si GitHub falla
+            latamCarsDB = [
+                {marca: "Volkswagen"}, {marca: "Ford"}, {marca: "Chevrolet"}, {marca: "Toyota"},
+                {marca: "Fiat"}, {marca: "Peugeot"}, {marca: "Renault"}, {marca: "Honda"}, {marca: "Nissan"}
+            ];
+            claveMarcaDetectada = "marca";
+        } 
+        actualizarListaMarcas(); 
     }
-    
     function actualizarListaMarcas() { 
         let marcasUnicas = new Set(); 
         if (latamCarsDB) { 
@@ -473,8 +550,25 @@ function cerrarSesion() {
         }); 
     }
     
-    function calcularAnoPorPatente() { let patente = document.getElementById('patente').value.trim().toUpperCase().replace(/[- ]/g, ''); let inputAnio = document.getElementById('anio'); if (inputAnio.value !== "") return; let ano = ""; if (patente.length === 6) { const l = patente.substring(0, 3); if (l >= 'OAA') ano = 2015; else if (l >= 'NAA') ano = 2014; else if (l >= 'MAA') ano = 2013; else if (l >= 'LAA') ano = 2012; else if (l >= 'KAA') ano = 2011; else if (l >= 'JAA') ano = 2010; else if (l >= 'IAA') ano = 2009; else if (l >= 'HAA') ano = 2008; else if (l >= 'GAA') ano = 2007; else if (l >= 'FAA') ano = 2006; else if (l >= 'EAA') ano = 2004; else if (l >= 'DAA') ano = 2000; else if (l >= 'CAA') ano = 1998; else if (l >= 'BAA') ano = 1996; else if (l >= 'AAA') ano = 1995; } else if (patente.length === 7) { const l = patente.substring(0, 2); if (l >= 'AG') ano = 2023; else if (l >= 'AF') ano = 2022; else if (l >= 'AE') ano = 2020; else if (l >= 'AD') ano = 2019; else if (l >= 'AC') ano = 2018; else if (l >= 'AB') ano = 2017; else if (l >= 'AA') ano = 2016; } if (ano !== "") inputAnio.value = ano; }
-
+        // LOGICA DE PATENTES AMPLIADA
+    function calcularAnoPorPatente() { 
+        let patente = document.getElementById('patente').value.trim().toUpperCase().replace(/[- ]/g, ''); 
+        let inputAnio = document.getElementById('anio'); 
+        if (inputAnio.value !== "") return; 
+        let ano = ""; 
+        
+        // Formato viejo: 3 letras + 3 números (XXX 000)
+        if (patente.length === 6 && /^[A-Z]{3}\d{3}$/.test(patente)) {
+            const l = patente.substring(0, 3);
+            if (l >= 'OAA') ano = 2015; else if (l >= 'NAA') ano = 2014; else if (l >= 'MAA') ano = 2013; else if (l >= 'LAA') ano = 2012; else if (l >= 'KAA') ano = 2011; else if (l >= 'JAA') ano = 2010; else if (l >= 'IAA') ano = 2009; else if (l >= 'HAA') ano = 2008; else if (l >= 'GAA') ano = 2007; else if (l >= 'FAA') ano = 2006; else if (l >= 'EAA') ano = 2004; else if (l >= 'DAA') ano = 2000; else if (l >= 'CAA') ano = 1998; else if (l >= 'BAA') ano = 1996; else if (l >= 'AAA') ano = 1995;
+        } 
+        // Formato Mercosur: 2 letras + 3 números + 2 letras (AA 000 AA)
+        else if (patente.length === 7) { 
+            const l = patente.substring(0, 2); 
+            if (l >= 'AI') ano = 2025; else if (l >= 'AH') ano = 2024; else if (l >= 'AG') ano = 2023; else if (l >= 'AF') ano = 2022; else if (l >= 'AE') ano = 2020; else if (l >= 'AD') ano = 2019; else if (l >= 'AC') ano = 2018; else if (l >= 'AB') ano = 2017; else if (l >= 'AA') ano = 2016; 
+        } 
+        if (ano !== "") inputAnio.value = ano; 
+    }
     // --- DASHBOARD GRÁFICOS Y ANALÍTICA ---
     function renderizarGraficoFinanzas(ingresosTotales, egresosTotales) {
         const ctx = document.getElementById('chartFinanzas').getContext('2d');
@@ -501,15 +595,15 @@ function cerrarSesion() {
             if (idEditar) {
                 res = await fetch(`/api/empleados/${idEditar}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
                 if(!res.ok) throw new Error(await res.text());
-                alert("✅ Empleado actualizado.");
+                mostrarNotificacion("✅ Empleado actualizado.", "exito");
             } else {
                 res = await fetch('/api/empleados/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); 
                 if(!res.ok) throw new Error("Posiblemente el DNI ya exista o falten datos.");
-                alert("✅ Empleado creado.");
+                mostrarNotificacion("✅ Empleado creado.", "exito");
             }
             cancelarEdicionEmpleado(); 
             cargarEmpleados();
-        } catch(e){ alert("Error al guardar empleado: " + e.message); }
+        } catch(e){ mostrarNotificacion("Error al guardar empleado: " + e.message, "error"); }
     });
 
     function iniciarEdicionEmpleado(id, nombre, doc, puesto) { document.getElementById('emp_id_editar').value = id; document.getElementById('emp_nombre').value = nombre; document.getElementById('emp_doc').value = doc; document.getElementById('emp_puesto').value = puesto; document.getElementById('btn_guardar_emp').innerHTML = '<i class="ph ph-floppy-disk"></i> Guardar Cambios'; document.getElementById('btn_cancelar_emp').style.display = 'block'; document.getElementById('formEmpleado').scrollIntoView({ behavior: 'smooth' }); }
@@ -548,23 +642,86 @@ function cerrarSesion() {
         } catch(e){ console.error("Error al cargar caja", e); renderizarGraficoFinanzas(0,0); } 
     }
     
-    document.getElementById('formCaja').addEventListener('submit', async (e) => { 
-        e.preventDefault(); 
-        try {
-            const res = await fetch('/api/caja/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ tipo: document.getElementById('caja_tipo').value, metodo_pago: document.getElementById('caja_metodo').value, monto: parseFloat(document.getElementById('caja_monto').value), motivo: document.getElementById('caja_motivo').value }) }); 
-            if (!res.ok) throw new Error(await res.text());
-            document.getElementById('formCaja').reset(); 
-            alert("✅ Movimiento registrado en Caja.");
-            cargarCaja(); 
-        } catch(e) { alert("Error al registrar movimiento: " + e.message); }
-    });
+// 4. ARREGLO DE FINANZAS (Caja Tipo)
+document.getElementById('formCaja').addEventListener('submit', async (e) => { 
+    e.preventDefault(); 
+    try {
+        const radioSeleccionado = document.querySelector('input[name="caja_tipo"]:checked');
+        const tipoSeleccionado = radioSeleccionado ? radioSeleccionado.value : 'INGRESO'; // Evita el error de leer null
+        
+        // Fijate que le saqué la barra final al /api/caja para evitar el error 405 Method Not Allowed
+        const res = await fetch('/api/caja', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ 
+                tipo: tipoSeleccionado, 
+                metodo_pago: document.getElementById('caja_metodo').value, 
+                monto: parseFloat(document.getElementById('caja_monto').value), 
+                motivo: document.getElementById('caja_motivo').value 
+            }) 
+        }); 
+        if (!res.ok) throw new Error(await res.text());
+        document.getElementById('formCaja').reset(); 
+        document.getElementById('caja_motivo').placeholder = 'Ej: Cobro servicio...'; 
+        mostrarNotificacion("✅ Movimiento registrado en Caja.", "exito");
+        cargarCaja(); 
+    } catch(e) { mostrarNotificacion("Error al registrar movimiento", "error"); }
+});
 
     async function eliminarMovimientoCaja(id) { if(confirm("¿Seguro que desea borrar este movimiento de caja?")) { try { await fetch(`/api/caja/${id}`, { method: 'DELETE' }); cargarCaja(); } catch(e) {} } }
     
     // --- ASISTENCIA (QR MÓVIL Y REPORTE) ---
     function abrirModalQREmpleado() { document.getElementById('modal-qr-empleado').style.display = 'flex'; document.getElementById('qr_input_simulado').focus(); }
-    async function procesarFichadaMovil() { const dni = document.getElementById('fichada_movil_dni').value; if (!dni) return; try { const res = await fetch('/api/asistencia/fichar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ documento: dni }) }); const data = await res.json(); if (res.ok) { alert(data.mensaje); document.getElementById('fichada_movil_dni').value = ''; } else { alert("Error: " + data.detail); } } catch(e) { alert("Error de conexión."); } }
-    
+    async function procesarFichadaMovil() { 
+        const dni = document.getElementById('fichada_movil_dni').value; 
+        if (!dni) return; 
+        try { 
+            // 1. Registramos la fichada
+            const res = await fetch('/api/asistencia/fichar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ documento: dni }) }); 
+            const data = await res.json(); 
+            if (res.ok) { 
+                mostrarNotificacion(data.mensaje, "exito"); 
+                document.getElementById('fichada_movil_dni').value = ''; 
+                
+                // 2. Buscamos las tareas de ese mecánico
+                try {
+                    const resEmp = await fetch('/api/empleados/');
+                    const empleados = await resEmp.json();
+                    const mecanico = empleados.find(e => e.documento === dni);
+                    
+                    if (mecanico) {
+                        const resTar = await fetch('/api/tareas/');
+                        const tareas = await resTar.json();
+                        const misTareas = tareas.filter(t => t.empleado_id === mecanico.id && t.estado !== 'Terminada');
+                        
+                        const panel = document.getElementById('fichada_panel_tareas');
+                        const lista = document.getElementById('fichada_lista_tareas');
+                        lista.innerHTML = '';
+                        
+                        if (misTareas.length > 0) {
+                            misTareas.forEach(t => {
+                                lista.innerHTML += `
+                                <div style="background:#f4f4f5; padding:12px; border-radius:8px; display: flex; flex-direction: column; gap: 5px;">
+                                    <span style="font-size: 0.8rem; color: gray;"><strong>${t.vehiculo}</strong> | Box: ${t.box || 'A Confirmar'}</span>
+                                    <strong>${t.descripcion}</strong>
+                                    <span style="font-size: 0.85rem; color: var(--warning);"><i class="ph ph-clock"></i> ${t.estado}</span>
+                                </div>`;
+                            });
+                            panel.style.display = 'block';
+                        } else {
+                            panel.style.display = 'none';
+                        }
+                    }
+                } catch(err) { console.warn("No se pudieron cargar las tareas del mecánico."); }
+
+            } else { 
+                mostrarNotificacion("Error: " + data.detail, "error"); 
+            } 
+        } catch(e) { 
+            mostrarNotificacion("Error de conexión.", "error"); 
+        } 
+    }
+    // EL RELOJ RECALIBRADO PARA ARGENTINA
     async function cargarPresentesDashboard() { 
         try { 
             const res = await fetch('/api/asistencia/presentes'); 
@@ -572,11 +729,11 @@ function cerrarSesion() {
             const listaDash = document.getElementById('lista-presentes-dash'); 
             listaDash.innerHTML = ''; 
             if (presentes.length === 0) { 
-                listaDash.innerHTML = '<li style=\"text-align:center; color:var(--text-muted); padding: 15px;\"><i class=\"ph ph-coffee\" style=\"font-size:2rem; display:block; margin-bottom:10px;\"></i>Nadie en turno activo.</li>'; 
+                listaDash.innerHTML = '<li style=\"text-align:center; color:var(--text-muted); padding: 15px;\">Nadie en turno activo.</li>'; 
             } else { 
                 presentes.forEach(p => { 
-                    // Mostramos la hora exacta local sin que JS la cambie de zona
-                    const h = new Date(p.hora_entrada).toLocaleTimeString('es-AR', { hour: '2-digit', minute:'2-digit' }); 
+                    // Forzamos la zona horaria de Argentina
+                    const h = new Date(p.hora_entrada).toLocaleTimeString('es-AR', { hour: '2-digit', minute:'2-digit', timeZone: 'America/Argentina/Cordoba' }); 
                     listaDash.innerHTML += `<li style=\"display:flex; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); align-items:center;\"><span><i class=\"ph ph-user-circle\" style=\"color:var(--success); font-size:1.2rem; vertical-align:middle; margin-right:5px;\"></i> <strong>${p.nombre}</strong></span><span style=\"color:var(--text-muted); font-size:0.85rem;\"><i class=\"ph ph-clock\"></i> Ingreso: ${h}</span></li>`; 
                 }); 
             } 
@@ -626,7 +783,7 @@ function cerrarSesion() {
             });
             if(!res.ok) throw new Error("Falta configurar la ruta PUT en el backend.");
             cargarItemsPresupuesto(id_orden);
-        } catch(e) { alert("Error al actualizar precio: " + e.message); }
+        } catch(e) { mostrarNotificacion("Error al actualizar precio: " + e.message, "error"); }
     }
 
     async function eliminarDetalleOrden(id_orden, id_detalle) {
@@ -634,15 +791,18 @@ function cerrarSesion() {
         try {
             const res = await fetch(`/api/ordenes/detalles/${id_detalle}`, { method: 'DELETE' });
             cargarItemsPresupuesto(id_orden);
-        } catch(e) { alert("Error al eliminar: " + e.message); }
+        } catch(e) { mostrarNotificacion("Error al eliminar: " + e.message, "error"); }
     }
     
     async function agregarItemPresupuesto() { const id = document.getElementById('modal_orden_id').value; const desc = document.getElementById('item_desc').value; const cant = document.getElementById('item_cant').value; const pre = document.getElementById('item_precio').value; if(!desc)return; await fetch(`/api/ordenes/${id}/detalles`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ descripcion: desc, cantidad: parseInt(cant), precio_unitario: parseFloat(pre||0) }) }); document.getElementById('item_desc').value=''; document.getElementById('item_precio').value=''; document.getElementById('select_catalogo').value=''; cargarItemsPresupuesto(id); }
     
     function crearMagiaPDF(listaItems, origen) {
-        if(listaItems.length === 0) { alert("Debe agregar al menos 1 servicio al presupuesto."); return; }
-        const tallerNombre = document.getElementById('conf_nombre').value || "Nombre No Configurado"; const tallerDir = document.getElementById('conf_direccion').value || "Dirección No Configurada"; const tallerTel = document.getElementById('conf_telefono').value || "Teléfono No Configurado"; const fecha = new Date().toLocaleDateString('es-AR');
-        const esCotizacion = (origen === "Cotizacion"); let cliente = ""; let vehiculo = ""; let patente = ""; let ordenNro = "";
+        if(listaItems.length === 0) { mostrarNotificacion("Debe agregar al menos 1 servicio al presupuesto.", "error"); return; }
+        // Leemos directo de la memoria global, no del HTML
+        const tallerNombre = window.tallerConfigGlobal.nombre || "Nombre No Configurado"; 
+        const tallerDir = window.tallerConfigGlobal.direccion || "Dirección No Configurada"; 
+        const tallerTel = window.tallerConfigGlobal.telefono || "Teléfono No Configurado"; 
+        const fecha = new Date().toLocaleDateString('es-AR');
         if (esCotizacion) { cliente = document.getElementById('rapido_cliente').value || "Consumidor Final"; const marca = document.getElementById('rapido_marca').value || ""; const modelo = document.getElementById('rapido_modelo').value || ""; vehiculo = (marca || modelo) ? `${marca} ${modelo}`.trim() : "A Confirmar"; } else { cliente = ordenActualParaPDF.dueño; vehiculo = ordenActualParaPDF.vehiculo_desc; patente = "Patente: " + ordenActualParaPDF.patente; ordenNro = "00" + document.getElementById('modal_orden_id').value; }
         let filasTabla = ""; let total = 0;
         listaItems.forEach(item => { const subtotal = item.cantidad * item.precio_unitario; total += subtotal; filasTabla += `<tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding:12px; color:#18181b;\">${item.descripcion}</td><td style=\"padding:12px; text-align:center; color:#18181b;\">${item.cantidad}</td><td style=\"padding:12px; text-align:right; color:#18181b;\">$${item.precio_unitario.toLocaleString('es-AR')}</td><td style=\"padding:12px; text-align:right; font-weight:900; color:#000000;\">$${subtotal.toLocaleString('es-AR')}</td></tr>`; });
@@ -665,7 +825,7 @@ function cerrarSesion() {
             const detalles = await res.json(); 
             let total = 0; 
             detalles.forEach(d => total += (d.cantidad * d.precio_unitario));
-            if (total === 0) alert("Aviso: El presupuesto está en $0. Asegúrate de ponerle precio a los ítems.");
+            if (total === 0) mostrarNotificacion("Aviso: El presupuesto está en $0. Asegúrate de ponerle precio a los ítems.", "error");
             
             montoTotalCobro = total;
             pagosActuales = []; // Reiniciamos pagos
@@ -762,10 +922,10 @@ function cerrarSesion() {
                 body: JSON.stringify({ estado: 'Entregado', ubicacion: 'Entregado' }) 
             });
             
-            alert("✅ Pagos registrados con éxito. El vehículo fue entregado."); 
+            mostrarNotificacion("✅ Pagos registrados con éxito. El vehículo fue entregado.", "exito"); 
             cargarTablero(); 
             cargarCaja();
-        } catch(e) { alert("Error al procesar el cobro: " + e.message); }
+        } catch(e) { mostrarNotificacion("Error al procesar el cobro: " + e.message, "error"); }
     }
 
     // ARREGLO DEL FORMULARIO DE LA CAJA GENERAL
@@ -789,7 +949,7 @@ function cerrarSesion() {
             document.getElementById('formCaja').reset(); 
             document.getElementById('caja_motivo').placeholder = 'Ej: Cobro servicio, Venta aceite...'; // Reset visual
             cargarCaja(); 
-        } catch(e) { alert("Error al registrar movimiento: " + e.message); }
+        } catch(e) { mostrarNotificacion("Error al registrar movimiento: " + e.message, "error"); }
     });
     async function calcularMetricasAvanzadas() {
         try {
@@ -871,30 +1031,14 @@ function cerrarSesion() {
 
         } catch(e) { console.log("Aviso en métricas globales:", e); }
     }
+// 3. LIMPIEZA DEL PRESUPUESTO ARREGLADA
     function limpiarPantallaPresupuesto() {
-    // 1. Limpiar los datos del Cliente y Vehículo
-    // (Reemplazá "id-..." por los id reales de tus inputs)
-    document.getElementById("id-cliente").value = "";
-    document.getElementById("id-marca").value = "";
-    document.getElementById("id-modelo").value = "";
-    
-    // 2. Limpiar los campos del ítem actual por si quedó algo escrito
-    document.getElementById("id-descripcion-item").value = "";
-    document.getElementById("id-cantidad").value = "1";
-    document.getElementById("id-precio").value = "";
-    
-    // 3. Resetear el select del catálogo a su opción por defecto
-    document.getElementById("id-select-catalogo").selectedIndex = 0;
-
-    // 4. Vaciar la memoria de la tabla
-    // (Asegurate de poner acá el nombre de la variable array donde guardás los ítems)
-    itemsPresupuesto = []; 
-
-    // 5. Borrar las filas de la tabla visualmente
-    document.getElementById("id-cuerpo-tabla").innerHTML = "";
-
-    // 6. Resetear el texto del Total
-    document.getElementById("id-total-estimado").innerText = "$0";
+        document.getElementById("item_desc").value = "";
+        document.getElementById("item_cant").value = "1";
+        document.getElementById("item_precio").value = "";
+        document.getElementById("select_catalogo").selectedIndex = 0;
+        document.getElementById("lista_items_orden").innerHTML = "";
+        document.getElementById("modal_total").innerText = "0.00";
     }
 // --- LÓGICA DEL TURNERO MENSUAL ---
     // --- LÓGICA DEL TURNERO Y SINCRONIZACIÓN ---
@@ -973,8 +1117,8 @@ function cerrarSesion() {
             if(!res.ok) throw new Error("Error del servidor");
             document.getElementById('formTurno').reset();
             cargarTurnos();
-            alert("✅ Turno agendado correctamente en la nube.");
-        } catch(error) { alert("Error al agendar el turno."); }
+            mostrarNotificacion("✅ Turno agendado correctamente en la nube.", "exito");
+        } catch(error) { mostrarNotificacion("Error al agendar el turno.", "error"); }
     }
     window.onload = detectarVistasMoviles;
 
@@ -1139,31 +1283,130 @@ function cerrarMenuMovil() {
     document.getElementById('sidebar').classList.remove('abierto');
 }
 
-// Opcional: Que el menú se cierre solo cuando eligen una opción en el celular
+// --- CONTROL DEL MENÚ Y SINCRONIZACIÓN EN TIEMPO REAL ---
 function cambiarSeccion(idSeccion, elementoMenu) {
-    // 1. Ocultamos TODAS las pantallas (secciones)
     const secciones = document.querySelectorAll('.section');
-    secciones.forEach(sec => {
-        sec.style.display = 'none';
-    });
+    secciones.forEach(sec => sec.style.display = 'none');
 
-    // 2. Mostramos SOLO la pantalla que el usuario tocó
     const seccionDestino = document.getElementById('sec-' + idSeccion);
-    if (seccionDestino) {
-        seccionDestino.style.display = 'block';
-    } else {
-        console.warn("No se encontró la pantalla: sec-" + idSeccion);
-    }
+    if (seccionDestino) seccionDestino.style.display = 'block';
 
-    // 3. Pintamos de rojo (o tu color activo) el botón seleccionado en el menú
     const botonesMenu = document.querySelectorAll('.menu-item');
     botonesMenu.forEach(btn => btn.classList.remove('active'));
-    if (elementoMenu) {
-        elementoMenu.classList.add('active');
-    }
+    if (elementoMenu) elementoMenu.classList.add('active');
 
-    // 4. Cerramos el menú suavemente si estamos en un celular
+    // Cierra el menú en celulares
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('abierto');
     }
+
+    // 🔥 SINCRONIZACIÓN FORZADA: Trae los datos frescos según la pantalla
+    if (idSeccion === 'dashboard') { cargarTablero(); cargarPresentesDashboard(); }
+    if (idSeccion === 'clientes') cargarClientesCRM();
+    if (idSeccion === 'presupuestos' || idSeccion === 'gestion') cargarCatalogoYBoxes(); 
+    if (idSeccion === 'recepcion' || idSeccion === 'taller') cargarTablero();
+    if (idSeccion === 'turnos') cargarTurnos();
+    if (idSeccion === 'empleados') cargarEmpleados();
+    if (idSeccion === 'caja') cargarCaja();
+    if (idSeccion === 'tareas') cargarTableroAdmin();
+}
+
+// ====================================================
+// LÓGICA DE INVENTARIO Y STOCK AUTOMÁTICO
+// ====================================================
+let inventarioGlobal = [];
+
+async function cargarInventario() {
+    try {
+        const res = await fetch('/api/inventario');
+        if (!res.ok) return;
+        inventarioGlobal = await res.json();
+        
+        const tbody = document.getElementById('lista_inventario');
+        if (tbody) tbody.innerHTML = '';
+        
+        const datalistMec = document.getElementById('lista-repuestos-inventario');
+        if (datalistMec) datalistMec.innerHTML = '';
+
+        inventarioGlobal.forEach(item => {
+            // Pintar tabla administrador
+            if (tbody) {
+                let badge = item.stock_actual <= 0 ? `<span class="badge-deuda">SIN STOCK</span>` : 
+                           (item.stock_actual <= item.stock_minimo ? `<span style="color:var(--warning); font-weight:bold;">BAJO</span>` : `<span style="color:var(--success); font-weight:bold;">OK</span>`);
+                
+                tbody.innerHTML += `<tr>
+                    <td style="color:gray;">${item.codigo || '-'}</td>
+                    <td><strong>${item.nombre}</strong></td>
+                    <td style="font-size:1.1rem; font-weight:bold; text-align:center;">${item.stock_actual}</td>
+                    <td style="text-align:center;">${badge}</td>
+                </tr>`;
+            }
+            // Llenar autocompletado del mecánico
+            if (datalistMec && item.stock_actual > 0) {
+                datalistMec.innerHTML += `<option value="${item.nombre}">Quedan: ${item.stock_actual}</option>`;
+            }
+        });
+    } catch (e) { console.warn("Módulo de inventario apagado."); }
+}
+
+// Guardar nuevo repuesto
+document.getElementById('formInventario')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+        const res = await fetch('/api/inventario', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                codigo: document.getElementById('inv_codigo').value,
+                nombre: document.getElementById('inv_nombre').value,
+                stock_actual: parseInt(document.getElementById('inv_stock').value),
+                categoria: "Repuesto"
+            })
+        });
+        if (!res.ok) throw new Error("Error al guardar inventario");
+        document.getElementById('formInventario').reset();
+        mostrarNotificacion("✅ Repuesto guardado en stock", "exito");
+        cargarInventario();
+    } catch(e) { mostrarNotificacion(e.message, "error"); }
+});
+
+// Modificación clave: Al cargar los datos globales al inicio, ahora también carga el inventario
+const oldCargarDatosGlobales = cargarDatosGlobales;
+cargarDatosGlobales = async function() {
+    await oldCargarDatosGlobales();
+    cargarInventario(); // <--- Llama al inventario también
+}
+
+// ====================================================
+// LÓGICA DE FIADO (COBRO DE DEUDAS)
+// ====================================================
+function abrirModalPagoDeuda(id, nombre, deuda) {
+    document.getElementById('deuda_cliente_id').value = id;
+    document.getElementById('deuda_nombre_cliente').innerText = nombre;
+    document.getElementById('deuda_monto_total').innerText = deuda.toLocaleString('es-AR');
+    document.getElementById('deuda_monto_pagar').value = deuda; // Le sugiere pagar todo junto
+    document.getElementById('modal-pago-deuda').style.display = 'flex';
+}
+
+async function procesarPagoDeuda() {
+    const id = document.getElementById('deuda_cliente_id').value;
+    const monto = parseFloat(document.getElementById('deuda_monto_pagar').value);
+    const metodo = document.getElementById('deuda_metodo_pago').value;
+    
+    try {
+        const res = await fetch(`/api/clientes/${id}/pagar_deuda`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ monto: monto, metodo_pago: metodo })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        
+        mostrarNotificacion("✅ Pago de deuda registrado en Caja", "exito");
+        document.getElementById('modal-pago-deuda').style.display = 'none';
+        
+        // Refrescamos todo para que los números den bien
+        cargarCaja(); 
+        cargarClientesCRM(); 
+        document.getElementById('crm_historial_datos').innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 50px;">Seleccione un cliente del directorio para ver su actualización.</div>';
+    } catch (e) { mostrarNotificacion("Error al procesar el pago", "error"); }
 }

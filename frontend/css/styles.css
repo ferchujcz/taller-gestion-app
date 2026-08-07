@@ -246,3 +246,73 @@
         font-size: 0.8rem;
     }
 }
+/* ==========================================
+   ARREGLOS RESPONSIVOS Y MODO OSCURO
+   ========================================== */
+
+/* 1. Reparar el scroll en Tablets y Celulares */
+.main-content {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch; /* Fluidez en pantallas táctiles */
+    height: 100vh;
+    padding-bottom: 80px; /* Espacio para que el botón flotante no tape contenido */
+}
+
+/* 2. Tablas Profesionales Compactas (Evita que ocupen toda la pantalla en PC) */
+.tabla-profesional {
+    font-size: 0.85rem; /* Letra un poco más chica y corporativa */
+    width: 100%;
+}
+.tabla-profesional th, .tabla-profesional td {
+    padding: 8px 12px; /* Reducimos el relleno excesivo */
+}
+
+/* En celulares, permitimos que las tablas se deslicen lateralmente sin romper todo */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* 3. Modo Oscuro Total (Para inputs, selects, modales y tarjetas) */
+body.dark-mode input, 
+body.dark-mode select, 
+body.dark-mode textarea {
+    background-color: #27272a !important; /* Gris oscuro, no negro puro */
+    color: #f4f4f5 !important;
+    border: 1px solid #3f3f46 !important;
+}
+
+body.dark-mode input::placeholder, 
+body.dark-mode textarea::placeholder {
+    color: #71717a !important; /* Gris más claro para que se lea */
+}
+
+body.dark-mode .modal-content, 
+body.dark-mode .card,
+body.dark-mode .stat-card {
+    background-color: #18181b !important;
+    border-color: #27272a !important;
+    color: #e4e4e7 !important;
+}
+
+body.dark-mode th {
+    background-color: #27272a !important;
+    color: #f4f4f5 !important;
+}
+
+/* 4. Etiqueta visual para deudores (Fiado) */
+.badge-deuda {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 8px;
+}

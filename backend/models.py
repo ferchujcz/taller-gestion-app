@@ -44,6 +44,7 @@ class Cliente(Base):
     taller_id = Column(Integer, ForeignKey("talleres.id"), default=1) # <--- Faltaba esta línea
     nombre = Column(String, index=True)
     telefono = Column(String)
+    saldo_deuda = Column(Float, default=0.0) # Acá guardamos lo que debe
     saldo_deudor = Column(Float, default=0.0)
     
     vehiculos = relationship("Vehiculo", back_populates="dueño")
@@ -168,3 +169,16 @@ class Tarea(Base):
     # Relaciones para que SQLAlchemy traiga los datos fácil
     orden = relationship("OrdenTrabajo")
     empleado = relationship("Empleado")
+
+class Inventario(Base):
+    __tablename__ = "inventario"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    codigo = Column(String, index=True, nullable=True) # Para leer con código de barras a futuro
+    nombre = Column(String, index=True)
+    categoria = Column(String, default="Repuesto")
+    stock_actual = Column(Integer, default=0)
+    stock_minimo = Column(Integer, default=5)
+    precio_costo = Column(Float, default=0.0)
+    precio_venta = Column(Float, default=0.0)
+    taller_id = Column(Integer, ForeignKey("talleres.id"))

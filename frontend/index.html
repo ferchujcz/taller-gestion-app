@@ -44,9 +44,10 @@
                     <option value="TAREA">🔧 Tarea / Mano de Obra</option>
                     <option value="REPUESTO">📦 Repuesto Utilizado</option>
                 </select>
-                <input type="text" id="mec_item_desc" placeholder="Descripción (Ej: Filtro)" style="font-size: 1rem; padding: 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+                <input type="text" id="mec_item_desc" list="lista-repuestos-inventario" placeholder="Descripción (Ej: Filtro de Aceite)" style="font-size: 1rem; padding: 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+                <datalist id="lista-repuestos-inventario"></datalist>
                 <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                    <div style="flex: 1;"><label>Cantidad</label><input type="number" id="mec_item_cant" value="1" min="1" style="text-align: center; font-size: 1.1rem; padding: 12px; margin:0; width: 100%; box-sizing: border-box;"></div>
+                    <div style="flex: 1;"><label>Cantidad</label><input type="number" id="mec_item_cant" placeholder="1" min="1" style="text-align: center; font-size: 1.1rem; padding: 12px; margin:0; width: 100%; box-sizing: border-box;"></div>
                 </div>
                 <label>Notas para el dueño/cliente (Opcional)</label>
                 <textarea id="mec_item_notas" placeholder="Ej: La rosca del cárter estaba barrida..." style="font-size: 1rem; padding: 12px; min-height: 80px; width: 100%; box-sizing: border-box;"></textarea>
@@ -69,6 +70,12 @@
         <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
             <input type="number" id="fichada_movil_dni" placeholder="Número de DNI" style="text-align: center; font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; width: 100%; box-sizing: border-box; margin-bottom: 15px;">
             <button class="btn-primary" style="padding: 15px; font-size: 1.1rem; width: 100%;" onclick="procesarFichadaMovil()"><i class="ph ph-check-circle"></i> Fichar Ahora</button>
+        </div>
+        
+        <!-- NUEVO CONTENEDOR PARA LAS TAREAS -->
+        <div id="fichada_panel_tareas" style="display: none; background: white; padding: 20px; border-radius: 12px; border: 2px solid var(--primary); margin-top: 20px; text-align: left;">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="ph ph-wrench"></i> Mis Tareas Pendientes</h3>
+            <div id="fichada_lista_tareas" style="display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
         <div style="text-align: center; margin-top: 30px;">
             <button class="btn-outline" style="padding: 12px; width: 100%;" onclick="window.location.href='/'">Volver</button>
@@ -208,6 +215,25 @@
                             <!-- TABLA BOXES PROTEGIDA -->
                             <div class="table-container">
                                 <table class="tabla-profesional"><thead><tr><th>Box Configurado</th><th style="text-align:center;">Acción</th></tr></thead><tbody id="lista_boxes_admin"></tbody></table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 20px;">
+                        <div class="col card" style="flex: 1;">
+                            <div class="card-header" style="color: var(--warning);">Inventario / Stock de Repuestos <i class="ph ph-package"></i></div>
+                            <form id="formInventario" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: flex-end;">
+                                <div style="flex:1; min-width: 150px;"><label>Código / SKU</label><input type="text" id="inv_codigo" placeholder="Ej: FIL-001" style="margin:0; width:100%;"></div>
+                                <div style="flex:2; min-width: 200px;"><label>Nombre del Repuesto</label><input type="text" id="inv_nombre" required placeholder="Ej: Filtro de Aceite 10W40" style="margin:0; width:100%;"></div>
+                                <div style="flex:1; min-width: 100px;"><label>Stock Inicial</label><input type="number" id="inv_stock" required style="margin:0; width:100%;" placeholder="1"></div>
+                                <button type="submit" class="btn-primary" style="margin:0; height: 42px;"><i class="ph ph-plus"></i> Guardar</button>
+                            </form>
+                            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                                <table class="tabla-profesional">
+                                    <thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 1;">
+                                        <tr><th>Código</th><th>Nombre del Repuesto</th><th style="text-align:center;">Stock Actual</th><th style="text-align:center;">Estado</th></tr>
+                                    </thead>
+                                    <tbody id="lista_inventario"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -562,7 +588,32 @@
             <button class="btn-primary" style="width: 100%;" onclick="imprimirCartelQR()"><i class="ph ph-printer"></i> Imprimir Cartel A4</button>
         </div>
     </div>
-
+    <div id="modal-pago-deuda" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="width: 400px; max-width: 95%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--danger);"><i class="ph ph-money"></i> Cobrar Deuda</h3>
+                <button onclick="document.getElementById('modal-pago-deuda').style.display='none'" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="ph ph-x"></i></button>
+            </div>
+            <p style="margin-bottom: 15px;">Cliente: <strong id="deuda_nombre_cliente"></strong></p>
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed var(--danger); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+                <span style="color: var(--danger); font-size: 0.9rem; font-weight: bold;">DEUDA TOTAL</span><br>
+                <strong style="font-size: 2rem; color: var(--danger);">$<span id="deuda_monto_total"></span></strong>
+            </div>
+            
+            <input type="hidden" id="deuda_cliente_id">
+            <label>Monto a Pagar Hoy ($)</label>
+            <input type="number" id="deuda_monto_pagar" style="width:100%; box-sizing:border-box; margin-bottom: 15px;" step="0.01">
+            
+            <label>Método de Pago</label>
+            <select id="deuda_metodo_pago" style="width:100%; box-sizing:border-box; margin-bottom: 20px;">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia / MP</option>
+                <option value="Tarjeta">Tarjeta / Posnet</option>
+            </select>
+            
+            <button class="btn-success" style="width:100%; padding: 15px; font-size: 1.1rem;" onclick="procesarPagoDeuda()"><i class="ph ph-check-circle"></i> Registrar Pago en Caja</button>
+        </div>
+    </div>
     <!-- PANTALLA MODO TV -->
     <div id="pantalla-tv" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -578,6 +629,6 @@
 
     <!-- ESTO ES LO QUE ARREGLA LA CARGA DEL JAVASCRIPT Y EL "Failed to read properties of null" -->
     <script src="/js/main.js"></script>
-
+    <div id="contenedor-notificaciones" style="position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;"></div>
 </body>
 </html>
