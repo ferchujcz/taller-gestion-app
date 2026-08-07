@@ -282,15 +282,36 @@ function cerrarSesion() {
     // --- SISTEMA GENERAL Y DB ---
     async function cargarDatosGlobales() {
         try {
-            const resC = await fetch('/api/clientes/'); if (!resC.ok) throw new Error("DB apagada");
-            const clientes = await resC.json(); document.getElementById('cliente_id').innerHTML = '<option value="">Seleccione...</option>'; clientes.forEach(c => document.getElementById('cliente_id').innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
-            const resV = await fetch('/api/vehiculos/'); const vehiculos = await resV.json();
-            vehiculosLocales = vehiculos; actualizarListaMarcas();      
-            document.getElementById('vehiculo_orden').innerHTML = '<option value="">Seleccione...</option>'; vehiculos.forEach(v => document.getElementById('vehiculo_orden').innerHTML += `<option value="${v.id}">${v.patente} - ${v.marca} ${v.modelo}</option>`);
-            cargarTablero(); cargarCaja(); cargarEmpleados(); cargarPresentesDashboard();
-        } catch(e) { console.error("🚨 Falla en datos globales:", e); }
-    }
+            // Recuperamos el token que se guardó al hacer login
+            const token = localStorage.getItem("token");
+            const headersAutenticados = {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            };
 
+            const resC = await fetch('/api/clientes/', { headers: headersAutenticados }); 
+            if (!resC.ok) throw new Error("No autorizado o DB apagada");
+            
+            const clientes = await resC.json(); 
+            document.getElementById('cliente_id').innerHTML = '<option value="">Seleccione...</option>'; 
+            clientes.forEach(c => document.getElementById('cliente_id').innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+            
+            const resV = await fetch('/api/vehiculos/', { headers: headersAutenticados }); 
+            const vehiculos = await resV.json();
+            vehiculosLocales = vehiculos; 
+            actualizarListaMarcas();      
+            
+            document.getElementById('vehiculo_orden').innerHTML = '<option value="">Seleccione...</option>'; 
+            vehiculos.forEach(v => document.getElementById('vehiculo_orden').innerHTML += `<option value="${v.id}">${v.patente} - ${v.marca} ${v.modelo}</option>`);
+            
+            cargarTablero(); 
+            cargarCaja(); 
+            cargarEmpleados(); 
+            cargarPresentesDashboard();
+        } catch(e) { 
+            console.error("🚨 Falla en datos globales o falta de sesión:", e); 
+        }
+    }
     async function cargarTablero() {
         try {
             const res = await fetch('/api/ordenes/'); if(!res.ok) return; const ordenes = await res.json();
