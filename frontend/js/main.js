@@ -11,7 +11,18 @@ document.addEventListener("DOMContentLoaded", function() {
         window.location.href = "login.html"; 
     }
 });
-
+// INTERceptor GLOBAL PARA FETCH: Inyecta el token de seguridad automáticamente en cada petición
+const originalFetch = window.fetch;
+window.fetch = async function(url, options = {}) {
+    const token = localStorage.getItem("token");
+    if (token) {
+        options.headers = {
+            ...options.headers,
+            "Authorization": `Bearer ${token}`
+        };
+    }
+    return originalFetch(url, options);
+};
 // Función extra: Botón para Cerrar Sesión
 function cerrarSesion() {
     localStorage.removeItem("token");
