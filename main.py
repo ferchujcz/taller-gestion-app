@@ -232,6 +232,13 @@ def pagar_deuda_cliente(cliente_id: int, req: PagoDeudaRequest, db: Session = De
     db.commit()
     
     return {"mensaje": f"Pago registrado en Caja. Deuda restante: ${cliente.saldo_deuda}"}
+
+# ==========================================
+# RUTA PING (Para mantener el servidor despierto)
+# ==========================================
+@app.get("/api/ping", tags=["Sistema"])
+def ping():
+    return {"status": "ok"}
 # ==========================================
 # RUTAS FRONTEND (VISTAS HTML)
 # ==========================================
