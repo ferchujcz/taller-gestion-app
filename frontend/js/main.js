@@ -10,20 +10,20 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// INTERCEPTOR GLOBAL DE FETCH BLINDADO
+// INTERCEPTOR GLOBAL DE FETCH BLINDADO (Corregido para CORS)
 const originalFetch = window.fetch;
 window.fetch = async function(url, options = {}) {
-    options.headers = options.headers || {};
-    
-    // Intentamos recuperar el token
-    const token = localStorage.getItem("token");
-    if (token) {
-        options.headers["Authorization"] = `Bearer ${token}`;
+    // Solo le metemos la llave de seguridad si la petición va a nuestro propio backend (/api/...)
+    if (typeof url === 'string' && url.startsWith('/api/')) {
+        options.headers = options.headers || {};
+        const token = localStorage.getItem("token");
+        if (token) {
+            options.headers["Authorization"] = `Bearer ${token}`;
+        }
     }
     
     try {
         const response = await originalFetch(url, options);
-        // Si el servidor nos rechaza con 401 y no estamos ya en el login, lo redirigimos
         if (response.status === 401 && !window.location.href.includes("login.html")) {
             console.warn("Sesión expirada o no iniciada. Redirigiendo al login...");
             window.location.href = "login.html";
@@ -67,12 +67,12 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     window.empleadosGlobal = [];
     window.todasLasMarcasGlobales = []; // Para el buscador inteligente
 
-    // --- RUTEO MÓVIL AUTOMÁTICO ---
+    // --- RUTEO MÓVIL AUTOMÁTICO (Sin spam en red) ---
     async function detectarVistasMoviles() { 
         const urlParams = new URLSearchParams(window.location.search); 
         const boxAsignado = urlParams.get('box'); 
         const esFichada = urlParams.get('fichar'); 
-        const esTV = urlParams.get('tv'); // <--- NUEVO
+        const esTV = urlParams.get('tv'); 
         
         if (esTV) {
             document.getElementById('app-escritorio').style.display = 'none';
@@ -94,9 +94,7 @@ function mostrarNotificacion(mensaje, tipo = "info") {
                     document.getElementById('mecanico_auto_trabajando').innerText = `${ordenEnEsteBox.patente} | ${ordenEnEsteBox.vehiculo_desc}`; 
                     document.getElementById('mecanico_orden_activa').value = ordenEnEsteBox.id; 
                     cargarItemsMecanico(ordenEnEsteBox.id);
-                    // ---> LÍNEA QUE FALTA AGREGAR <---
                     cargarTareasDeMecanicoEnCelular(ordenEnEsteBox.id); 
-                
                 } else { 
                     document.getElementById('mecanico_panel_espera').style.display = 'block'; 
                     document.getElementById('mecanico_panel_trabajo').style.display = 'none'; 
@@ -116,19 +114,9 @@ function mostrarNotificacion(mensaje, tipo = "info") {
             document.getElementById('pantalla-fichada').style.display = 'flex'; 
         } else { 
             cargarCatalogoYBoxes(); cargarConfiguracion(); cargarDatosGlobales(); cargarMarcasDesdeAPI(); 
-            
-            // SISTEMA DE RECARGA AUTOMATICA (Cada 15 segundos)
-            setInterval(() => {
-                if(document.getElementById('sec-taller').classList.contains('active') || document.getElementById('sec-dashboard').classList.contains('active')) {
-                    cargarTablero();
-                }
-                if(document.getElementById('sec-dashboard').classList.contains('active')){
-                    cargarPresentesDashboard();
-                }
-            }, 15000);
+            // Eliminamos el setInterval ruidoso de 15 segundos
         } 
     }
-
     // --- SISTEMA DE CATÁLOGO Y BOXES ---
     let catalogoGlobal = []; let boxesGlobal = []; let indexEditandoCatalogo = -1;
     async function cargarCatalogoYBoxes() { try { const resC = await fetch('/api/gestion/catalogo'); if (resC.ok) catalogoGlobal = await resC.json(); renderizarCatalogoAdmin(); const resB = await fetch('/api/gestion/boxes'); if (resB.ok) boxesGlobal = await resB.json(); renderizarBoxesAdmin(); } catch(e) { console.warn("Catálogo/Boxes offline"); } }
@@ -649,15 +637,15 @@ function mostrarNotificacion(mensaje, tipo = "info") {
         } catch(e){ console.error("Error al cargar caja", e); renderizarGraficoFinanzas(0,0); } 
     }
     
-// 4. ARREGLO DE FINANZAS (Caja Tipo)
+// ARREGLO DEL FORMULARIO DE LA CAJA GENERAL
 document.getElementById('formCaja').addEventListener('submit', async (e) => { 
     e.preventDefault(); 
     try {
         const radioSeleccionado = document.querySelector('input[name="caja_tipo"]:checked');
-        const tipoSeleccionado = radioSeleccionado ? radioSeleccionado.value : 'INGRESO'; // Evita el error de leer null
+        const tipoSeleccionado = radioSeleccionado ? radioSeleccionado.value : 'INGRESO'; 
         
-        // Fijate que le saqué la barra final al /api/caja para evitar el error 405 Method Not Allowed
-        const res = await fetch('/api/caja', { 
+        // ACÁ ESTABA EL ERROR: Le faltaba la barra final a /api/caja/
+        const res = await fetch('/api/caja/', { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({ 
@@ -674,7 +662,6 @@ document.getElementById('formCaja').addEventListener('submit', async (e) => {
         cargarCaja(); 
     } catch(e) { mostrarNotificacion("Error al registrar movimiento", "error"); }
 });
-
     async function eliminarMovimientoCaja(id) { if(confirm("¿Seguro que desea borrar este movimiento de caja?")) { try { await fetch(`/api/caja/${id}`, { method: 'DELETE' }); cargarCaja(); } catch(e) {} } }
     
     // --- ASISTENCIA (QR MÓVIL Y REPORTE) ---
@@ -815,14 +802,14 @@ document.getElementById('formCaja').addEventListener('submit', async (e) => {
         let cliente = ""; let vehiculo = ""; let patente = ""; let ordenNro = "";
         
         if (esCotizacion) { 
-            cliente = document.getElementById('rapido_cliente').value || "Consumidor Final"; 
-            const marca = document.getElementById('rapido_marca').value || ""; 
-            const modelo = document.getElementById('rapido_modelo').value || ""; 
+            cliente = document.getElementById('rapido_cliente')?.value || "Consumidor Final"; 
+            const marca = document.getElementById('rapido_marca')?.value || ""; 
+            const modelo = document.getElementById('rapido_modelo')?.value || ""; 
             vehiculo = (marca || modelo) ? `${marca} ${modelo}`.trim() : "A Confirmar"; 
         } else { 
-            cliente = ordenActualParaPDF.dueño || "Consumidor Final"; 
-            vehiculo = ordenActualParaPDF.vehiculo_desc || ""; 
-            patente = "Patente: " + (ordenActualParaPDF.patente || ""); 
+            cliente = ordenActualParaPDF?.dueño || "Consumidor Final"; 
+            vehiculo = ordenActualParaPDF?.vehiculo_desc || ""; 
+            patente = "Patente: " + (ordenActualParaPDF?.patente || ""); 
             ordenNro = "00" + document.getElementById('modal_orden_id').value; 
         }
         
@@ -840,7 +827,19 @@ document.getElementById('formCaja').addEventListener('submit', async (e) => {
         const ventanaImpresion = window.open('', '_blank'); 
         ventanaImpresion.document.write(htmlImpresion); 
         ventanaImpresion.document.close(); 
-        document.getElementById('modal-presupuesto').style.display='none';
+        
+        const modalPresupuesto = document.getElementById('modal-presupuesto');
+        if (modalPresupuesto) modalPresupuesto.style.display='none';
+        
+        // Al terminar, limpiamos todo (Tanto presupuesto oficial como el rápido)
+        limpiarPantallaPresupuesto();
+        if (esCotizacion) {
+            itemsRapidos = [];
+            renderizarItemsRapidos();
+            document.getElementById('rapido_cliente').value = '';
+            document.getElementById('rapido_marca').value = '';
+            document.getElementById('rapido_modelo').value = '';
+        }
     }
     async function generarPDFOficial() { const id_orden = document.getElementById('modal_orden_id').value; const resItems = await fetch(`/api/ordenes/${id_orden}/detalles`); const itemsReales = await resItems.json(); crearMagiaPDF(itemsReales, "Orden Oficial");limpiarPantallaPresupuesto();}
 
