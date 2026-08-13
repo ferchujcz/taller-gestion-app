@@ -159,8 +159,26 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     let qrCodeActual = null; 
     function abrirModalQRBox(nombreBox) { document.getElementById('qr_titulo_modal').innerText = "Cartel QR del Box"; document.getElementById('nombre_box_imprimir').innerText = nombreBox; document.getElementById('qr_tipo_impresion').value = "BOX"; const contenedor = document.getElementById('contenedor-codigo-qr'); contenedor.innerHTML = ''; const urlReal = window.location.origin + "/?box=" + encodeURIComponent(nombreBox); qrCodeActual = new QRCode(contenedor, { text: urlReal, width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('modal-imprimir-qr').style.display = 'flex'; }
     function abrirModalQRGeneral() { document.getElementById('qr_titulo_modal').innerText = "QR Asistencia Personal"; document.getElementById('nombre_box_imprimir').innerText = "La Puerta de Entrada del Taller"; document.getElementById('qr_tipo_impresion').value = "ASISTENCIA"; const contenedor = document.getElementById('contenedor-codigo-qr'); contenedor.innerHTML = ''; const urlReal = window.location.origin + "/?fichar=true"; qrCodeActual = new QRCode(contenedor, { text: urlReal, width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('modal-imprimir-qr').style.display = 'flex'; }
-    function imprimirCartelQR() { const tipo = document.getElementById('qr_tipo_impresion').value; const nombre = document.getElementById('nombre_box_imprimir').innerText; const imgBase64 = document.querySelector('#contenedor-codigo-qr img').src; let htmlCartel = ""; if (tipo === "BOX") { htmlCartel = `<!DOCTYPE html><html><head><title>QR Box</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>${nombre}</h1><h2>3D RACER - ÁREA DE TRABAJO</h2><img src="${imgBase64}"><p>MECÁNICO: ESCANEE ESTE CÓDIGO CON SU CELULAR PARA INGRESAR EL VEHÍCULO A ESTE BOX</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`; } else { htmlCartel = `<!DOCTYPE html><html><head><title>QR Asistencia</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>CONTROL DE ASISTENCIA</h1><h2>TALLER 3D RACER</h2><img src="${imgBase64}"><p>PERSONAL: ESCANEE ESTE CÓDIGO CON SU CELULAR AL INGRESAR Y AL RETIRARSE</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`; } const ventana = window.open('', '_blank'); ventana.document.write(htmlCartel); ventana.document.close(); document.getElementById('modal-imprimir-qr').style.display = 'none'; }
+    // IMPRESIÓN DE QRs CON EL NOMBRE REAL DEL TALLER
+    function imprimirCartelQR() { 
+        const tipo = document.getElementById('qr_tipo_impresion').value; 
+        const nombre = document.getElementById('nombre_box_imprimir').innerText; 
+        const imgBase64 = document.querySelector('#contenedor-codigo-qr img').src; 
+        
+        // Traemos el nombre real de tu taller configurado
+        const nombreDeTuTaller = window.tallerConfigGlobal?.nombre || "TALLER AUTOMOTRIZ";
 
+        let htmlCartel = ""; 
+        if (tipo === "BOX") { 
+            htmlCartel = `<!DOCTYPE html><html><head><title>QR Box</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>${nombre}</h1><h2>${nombreDeTuTaller.toUpperCase()} - ÁREA DE TRABAJO</h2><img src="${imgBase64}"><p>MECÁNICO: ESCANEE ESTE CÓDIGO CON SU CELULAR PARA INGRESAR EL VEHÍCULO A ESTE BOX</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};</script></body></html>`; 
+        } else { 
+            htmlCartel = `<!DOCTYPE html><html><head><title>QR Asistencia</title><style>body { font-family: 'Helvetica', sans-serif; text-align: center; margin: 0; padding: 50px; } h1 { font-size: 60px; color: #000; text-transform: uppercase; margin-bottom: 10px;} h2 { font-size: 30px; color: #dc2626; margin-bottom: 50px;} img { width: 500px; height: 500px; border: 10px solid #000; padding: 20px; border-radius: 20px;} p { font-size: 24px; color: gray; margin-top: 50px;}</style></head><body><h1>CONTROL DE ASISTENCIA</h1><h2>${nombreDeTuTaller.toUpperCase()}</h2><img src="${imgBase64}"><p>PERSONAL: ESCANEE ESTE CÓDIGO CON SU CELULAR AL INGRESAR Y AL RETIRARSE</p><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};</script></body></html>`; 
+        } 
+        const ventana = window.open('', '_blank'); 
+        ventana.document.write(htmlCartel); 
+        ventana.document.close(); 
+        document.getElementById('modal-imprimir-qr').style.display = 'none'; 
+    }
     // --- CRM Y CLINICO MEJORADO ---
     async function cargarClientesCRM() { try { const res = await fetch('/api/clientes/'); if(!res.ok) throw new Error(); window.clientesCRMGlobal = await res.json(); renderizarListaCRM(window.clientesCRMGlobal); } catch(e) { console.error("Error CRM."); } }
     function filtrarCRM() { const texto = document.getElementById('buscador_crm').value.toLowerCase(); if(!window.clientesCRMGlobal) return; const filtrados = window.clientesCRMGlobal.filter(c => c.nombre.toLowerCase().includes(texto) || (c.telefono && c.telefono.toLowerCase().includes(texto)) ); renderizarListaCRM(filtrados); }
@@ -687,6 +705,9 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     
     // --- ASISTENCIA (QR MÓVIL Y REPORTE) ---
     function abrirModalQREmpleado() { document.getElementById('modal-qr-empleado').style.display = 'flex'; document.getElementById('qr_input_simulado').focus(); }
+    // PANEL INTERACTIVO DE TAREAS PARA EMPLEADOS
+    let mecanicoLogueadoId = null;
+
     async function procesarFichadaMovil() { 
         const dni = document.getElementById('fichada_movil_dni').value; 
         if (!dni) return; 
@@ -700,45 +721,67 @@ function mostrarNotificacion(mensaje, tipo = "info") {
                 try {
                     const resEmp = await fetch('/api/empleados/');
                     const empleados = await resEmp.json();
-                    // Búsqueda flexible por DNI
                     const mecanico = empleados.find(e => e.documento == dni); 
                     
                     if (mecanico) {
-                        const resTar = await fetch('/api/tareas/');
-                        const tareas = await resTar.json();
-                        // Filtramos las tareas pendientes de este mecánico específico
-                        const misTareas = tareas.filter(t => t.empleado_id == mecanico.id && t.estado !== 'Terminada');
-                        
-                        const panel = document.getElementById('fichada_panel_tareas');
-                        const lista = document.getElementById('fichada_lista_tareas');
-                        lista.innerHTML = '';
-                        
-                        if (misTareas.length > 0) {
-                            misTareas.forEach(t => {
-                                const vehiculoStr = t.vehiculo || 'Vehículo en Taller';
-                                const boxStr = t.box || 'General';
-                                
-                                lista.innerHTML += `
-                                <div style="background:#f4f4f5; padding:12px; border-radius:8px; display: flex; flex-direction: column; gap: 5px;">
-                                    <span style="font-size: 0.8rem; color: gray;"><strong>${vehiculoStr}</strong> | Box: ${boxStr}</span>
-                                    <strong style="color: var(--dark); font-size: 1.1rem;">${t.descripcion}</strong>
-                                    <span style="font-size: 0.85rem; color: var(--warning); font-weight: bold;"><i class="ph ph-clock"></i> ${t.estado}</span>
-                                </div>`;
-                            });
-                            panel.style.display = 'block';
-                        } else {
-                            panel.style.display = 'none';
-                            mostrarNotificacion("Fichaje exitoso. No tenés tareas pendientes.", "info");
-                        }
+                        mecanicoLogueadoId = mecanico.id; 
+                        await recargarTareasMecanicoFichada(); // Carga las tarjetas interactivas
                     }
                 } catch(err) { console.warn("No se pudieron cargar las tareas del mecánico."); }
-
             } else { 
                 mostrarNotificacion("Error: " + data.detail, "error"); 
             } 
         } catch(e) { 
             mostrarNotificacion("Error de conexión.", "error"); 
         } 
+    }
+
+    async function recargarTareasMecanicoFichada() {
+        if(!mecanicoLogueadoId) return;
+        const resTar = await fetch('/api/tareas/');
+        const tareas = await resTar.json();
+        const misTareas = tareas.filter(t => t.empleado_id == mecanicoLogueadoId && t.estado !== 'Terminada');
+        
+        const panel = document.getElementById('fichada_panel_tareas');
+        const lista = document.getElementById('fichada_lista_tareas');
+        lista.innerHTML = '';
+        
+        if (misTareas.length > 0) {
+            misTareas.forEach(t => {
+                const vehiculoStr = t.vehiculo || 'Vehículo en Taller';
+                const boxStr = t.box || 'General';
+                // Lógica de botones
+                const txtBtn = t.estado === 'Pendiente' ? 'Iniciar Trabajo' : 'Terminar Tarea';
+                const btnClase = t.estado === 'Pendiente' ? 'btn-primary' : 'btn-success';
+                
+                lista.innerHTML += `
+                <div style="background:#f4f4f5; padding:15px; border-radius:8px; display: flex; flex-direction: column; gap: 8px; border-left: 4px solid var(--primary);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size: 0.85rem; color: gray;"><strong>${vehiculoStr}</strong> | Box: ${boxStr}</span>
+                        <span style="font-size: 0.8rem; background: var(--dark); color: white; padding: 2px 6px; border-radius: 4px;">${t.estado}</span>
+                    </div>
+                    <strong style="color: var(--dark); font-size: 1.1rem;">${t.descripcion}</strong>
+                    <button class="${btnClase}" style="width:100%; padding:10px; margin-top:5px; font-weight:bold;" onclick="cambiarEstadoTareaDesdeFichada(${t.id}, '${t.estado}')">
+                        <i class="ph ph-wrench"></i> ${txtBtn}
+                    </button>
+                </div>`;
+            });
+            panel.style.display = 'block';
+        } else {
+            panel.style.display = 'none';
+            mostrarNotificacion("No tenés tareas pendientes. ¡Buen trabajo!", "info");
+        }
+    }
+
+    async function cambiarEstadoTareaDesdeFichada(id, estadoActual) {
+        let nuevoEstado = estadoActual === 'Pendiente' ? 'En Proceso' : 'Terminada';
+        try {
+            await fetch(`/api/tareas/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({estado: nuevoEstado}) });
+            mostrarNotificacion(`Tarea marcada como: ${nuevoEstado}`, "exito");
+            await recargarTareasMecanicoFichada(); // Se refresca solo al instante
+        } catch(e) {
+            mostrarNotificacion("Error al actualizar tarea", "error");
+        }
     }
     // EL RELOJ RECALIBRADO PARA ARGENTINA
     async function cargarPresentesDashboard() { 
@@ -1442,4 +1485,33 @@ async function procesarPagoDeuda() {
         cargarClientesCRM(); 
         document.getElementById('crm_historial_datos').innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 50px;">Seleccione un cliente del directorio para ver su actualización.</div>';
     } catch (e) { mostrarNotificacion("Error al procesar el pago", "error"); }
+}
+
+// AUTOCOMPLETADO MÁGICO DE VEHÍCULOS EN RECEPCIÓN
+document.getElementById('patente')?.addEventListener('input', function(e) {
+    const val = e.target.value.trim().toUpperCase();
+    if(typeof vehiculosLocales === 'undefined') return;
+    
+    const vehiculoEncontrado = vehiculosLocales.find(v => v.patente.toUpperCase() === val);
+    
+    if (vehiculoEncontrado) {
+        document.getElementById('recepcion_marca').value = vehiculoEncontrado.marca || '';
+        document.getElementById('recepcion_modelo').value = vehiculoEncontrado.modelo || '';
+        document.getElementById('anio').value = vehiculoEncontrado.anio || '';
+        document.getElementById('cliente_id').value = vehiculoEncontrado.cliente_id || '';
+        mostrarNotificacion("🚗 Vehículo conocido. Datos precargados.", "info");
+    }
+});
+
+// Parche para llenar la lista desplegable al cargar el sistema
+const oldCargarGlobalesAutocompletado = cargarDatosGlobales;
+cargarDatosGlobales = async function() {
+    await oldCargarGlobalesAutocompletado();
+    const datalistPatentes = document.getElementById('lista-patentes-registradas');
+    if(datalistPatentes && vehiculosLocales) {
+        datalistPatentes.innerHTML = '';
+        vehiculosLocales.forEach(v => {
+            datalistPatentes.innerHTML += `<option value="${v.patente}">${v.marca} ${v.modelo}</option>`;
+        });
+    }
 }
