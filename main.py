@@ -14,7 +14,7 @@ from backend.database import engine, get_db
 from backend import models
 from backend.schemas import RegistroSaaS
 from backend.models import Usuario, Taller, TallerConfig, MovimientoCaja, Inventario, Cliente
-from backend.routes import vehiculos, ordenes, configuracion, finanzas, empleados, gestion, turnos, clientes
+from backend.routes import vehiculos, ordenes, configuracion, finanzas, empleados, gestion, turnos, clientes, caja
 # ==========================================
 # CONFIGURACIÓN DE SEGURIDAD
 # ==========================================
@@ -57,6 +57,7 @@ app.include_router(configuracion.router, prefix="/api/configuracion")
 app.include_router(gestion.router, prefix="/api/gestion")
 app.include_router(turnos.router, prefix="/api")
 app.include_router(clientes.router, prefix="/api")
+app.include_router(caja.router, prefix="/api")
 # ==========================================
 # RUTA DE REGISTRO (BLINDADA)
 # ==========================================

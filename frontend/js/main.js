@@ -478,10 +478,11 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     });
     async function moverOrden(id_orden, estado, ubi = null) { let ubicacion = ubi || document.getElementById(`sel_box_${id_orden}`).value; await fetch(`/api/ordenes/${id_orden}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ estado: estado, ubicacion: ubicacion }) }); cargarTablero(); }
 
-// 1. EL PARACAÍDAS PARA LAS MARCAS
+    // 1. EL PARACAÍDAS PARA LAS MARCAS MEJORADO
     async function cargarMarcasDesdeAPI() { 
         try { 
-            const res = await fetch('https://raw.githubusercontent.com/BayronDavid/latam-vehicle-db/main/vehicles_cars.json'); 
+            // Usamos la red jsDelivr para saltar el bloqueo CORS de GitHub
+            const res = await fetch('https://cdn.jsdelivr.net/gh/BayronDavid/latam-vehicle-db@main/vehicles_cars.json'); 
             if(!res.ok) throw new Error("CORS o error de red");
             latamCarsDB = await res.json(); 
             if (Array.isArray(latamCarsDB) && latamCarsDB.length > 0) { 
@@ -491,12 +492,18 @@ function mostrarNotificacion(mensaje, tipo = "info") {
             } 
         } catch (e) { 
             console.warn("Usando base de marcas local de respaldo.");
-            // Fallback robusto si GitHub falla
+            // Respaldo corporativo con modelos incluidos para que nunca falle
             latamCarsDB = [
-                {marca: "Volkswagen"}, {marca: "Ford"}, {marca: "Chevrolet"}, {marca: "Toyota"},
-                {marca: "Fiat"}, {marca: "Peugeot"}, {marca: "Renault"}, {marca: "Honda"}, {marca: "Nissan"}
+                {marca: "Volkswagen", modelo: "Amarok"}, {marca: "Volkswagen", modelo: "Gol"}, {marca: "Volkswagen", modelo: "Vento"},
+                {marca: "Ford", modelo: "Ranger"}, {marca: "Ford", modelo: "Fiesta"}, {marca: "Ford", modelo: "Focus"},
+                {marca: "Chevrolet", modelo: "S10"}, {marca: "Chevrolet", modelo: "Cruze"}, {marca: "Chevrolet", modelo: "Onix"},
+                {marca: "Toyota", modelo: "Hilux"}, {marca: "Toyota", modelo: "Corolla"}, {marca: "Toyota", modelo: "Etios"},
+                {marca: "Fiat", modelo: "Cronos"}, {marca: "Fiat", modelo: "Toro"}, {marca: "Fiat", modelo: "Argo"},
+                {marca: "Peugeot", modelo: "208"}, {marca: "Peugeot", modelo: "308"},
+                {marca: "Renault", modelo: "Kangoo"}, {marca: "Renault", modelo: "Clio"}
             ];
             claveMarcaDetectada = "marca";
+            claveModeloDetectada = "modelo";
         } 
         actualizarListaMarcas(); 
     }
@@ -798,18 +805,42 @@ document.getElementById('formCaja').addEventListener('submit', async (e) => {
     
     function crearMagiaPDF(listaItems, origen) {
         if(listaItems.length === 0) { mostrarNotificacion("Debe agregar al menos 1 servicio al presupuesto.", "error"); return; }
-        // Leemos directo de la memoria global, no del HTML
-        const tallerNombre = window.tallerConfigGlobal.nombre || "Nombre No Configurado"; 
-        const tallerDir = window.tallerConfigGlobal.direccion || "Dirección No Configurada"; 
-        const tallerTel = window.tallerConfigGlobal.telefono || "Teléfono No Configurado"; 
+        
+        const tallerNombre = window.tallerConfigGlobal?.nombre || "Taller Automotriz"; 
+        const tallerDir = window.tallerConfigGlobal?.direccion || ""; 
+        const tallerTel = window.tallerConfigGlobal?.telefono || ""; 
         const fecha = new Date().toLocaleDateString('es-AR');
-        if (esCotizacion) { cliente = document.getElementById('rapido_cliente').value || "Consumidor Final"; const marca = document.getElementById('rapido_marca').value || ""; const modelo = document.getElementById('rapido_modelo').value || ""; vehiculo = (marca || modelo) ? `${marca} ${modelo}`.trim() : "A Confirmar"; } else { cliente = ordenActualParaPDF.dueño; vehiculo = ordenActualParaPDF.vehiculo_desc; patente = "Patente: " + ordenActualParaPDF.patente; ordenNro = "00" + document.getElementById('modal_orden_id').value; }
+        
+        const esCotizacion = (origen === "Cotizacion"); 
+        let cliente = ""; let vehiculo = ""; let patente = ""; let ordenNro = "";
+        
+        if (esCotizacion) { 
+            cliente = document.getElementById('rapido_cliente').value || "Consumidor Final"; 
+            const marca = document.getElementById('rapido_marca').value || ""; 
+            const modelo = document.getElementById('rapido_modelo').value || ""; 
+            vehiculo = (marca || modelo) ? `${marca} ${modelo}`.trim() : "A Confirmar"; 
+        } else { 
+            cliente = ordenActualParaPDF.dueño || "Consumidor Final"; 
+            vehiculo = ordenActualParaPDF.vehiculo_desc || ""; 
+            patente = "Patente: " + (ordenActualParaPDF.patente || ""); 
+            ordenNro = "00" + document.getElementById('modal_orden_id').value; 
+        }
+        
         let filasTabla = ""; let total = 0;
-        listaItems.forEach(item => { const subtotal = item.cantidad * item.precio_unitario; total += subtotal; filasTabla += `<tr style=\"border-bottom: 1px solid #e2e8f0;\"><td style=\"padding:12px; color:#18181b;\">${item.descripcion}</td><td style=\"padding:12px; text-align:center; color:#18181b;\">${item.cantidad}</td><td style=\"padding:12px; text-align:right; color:#18181b;\">$${item.precio_unitario.toLocaleString('es-AR')}</td><td style=\"padding:12px; text-align:right; font-weight:900; color:#000000;\">$${subtotal.toLocaleString('es-AR')}</td></tr>`; });
-        const logoHtml = logoBase64Actual ? `<img src=\"${logoBase64Actual}\" style=\"max-height: 80px; margin-bottom: 10px;\">` : ``;
+        listaItems.forEach(item => { 
+            const subtotal = item.cantidad * item.precio_unitario; 
+            total += subtotal; 
+            filasTabla += `<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding:12px; color:#18181b;">${item.descripcion}</td><td style="padding:12px; text-align:center; color:#18181b;">${item.cantidad}</td><td style="padding:12px; text-align:right; color:#18181b;">$${item.precio_unitario.toLocaleString('es-AR')}</td><td style="padding:12px; text-align:right; font-weight:900; color:#000000;">$${subtotal.toLocaleString('es-AR')}</td></tr>`; 
+        });
+        
+        const logoHtml = logoBase64Actual ? `<img src="${logoBase64Actual}" style="max-height: 80px; margin-bottom: 10px;">` : ``;
 
-        const htmlImpresion = `<!DOCTYPE html><html><head><title>${esCotizacion ? 'Cotización' : 'Presupuesto'}</title><style>body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #18181b; margin: 0; padding: 40px; } .header { display: flex; justify-content: space-between; border-bottom: 4px solid #dc2626; padding-bottom: 20px; margin-bottom: 30px; } .header h2 { margin: 0; color: #000000; font-size: 26px; text-transform: uppercase; font-weight: 900;} .header p { margin: 5px 0 0 0; color: #52525b; font-size: 14px; font-weight: bold;} .title-box { text-align: right; } .title-box h1 { margin: 0; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; font-size: 28px; font-weight: 900;} .info-box { background: #f4f4f5; padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #e4e4e7; display: flex; gap: 20px; } .info-box div { flex: 1; font-size: 14px; } table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; } th { background-color: #000000; color: white; padding: 12px; text-align: left; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;} .total-box { display: flex; justify-content: flex-end; } .total-box div { width: 250px; padding: 20px; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 8px; text-align: right; } .total-box strong { font-size: 1.5rem; color: #000000; } .total-box span { color: #dc2626; font-weight: 900;} @page { size: A4; margin: 10mm; }</style></head><body> <div class=\"header\"><div> ${logoHtml} <h2>${tallerNombre}</h2><p>${tallerDir}</p><p>Tel: ${tallerTel}</p></div><div class=\"title-box\"><h1>${esCotizacion ? 'COTIZACIÓN' : 'PRESUPUESTO OFICIAL'}</h1><p style=\"font-weight:bold;\">Fecha: ${fecha}</p>${!esCotizacion ? `<p style=\"color:gray;\">Orden N°: ${ordenNro}</p>` : ''}</div></div><div class=\"info-box\"><div><strong>Cliente:</strong> ${cliente}</div><div><strong>Vehículo:</strong> ${vehiculo} <span style=\"color:gray; font-style:italic;\">${patente}</span></div></div><table><thead><tr><th>Descripción del Servicio / Repuesto</th><th style=\"text-align: center;\">Cant.</th><th style=\"text-align: right;\">Precio Unit.</th><th style=\"text-align: right;\">Subtotal</th></tr></thead><tbody> ${filasTabla} </tbody></table><div class=\"total-box\"><div><strong>TOTAL: <br><span>$${total.toLocaleString('es-AR')}</span></strong></div></div><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};<\/script></body></html>`;
-        const ventanaImpresion = window.open('', '_blank'); ventanaImpresion.document.write(htmlImpresion); ventanaImpresion.document.close(); document.getElementById('modal-presupuesto').style.display='none';
+        const htmlImpresion = `<!DOCTYPE html><html><head><title>${esCotizacion ? 'Cotización' : 'Presupuesto'}</title><style>body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #18181b; margin: 0; padding: 40px; } .header { display: flex; justify-content: space-between; border-bottom: 4px solid #dc2626; padding-bottom: 20px; margin-bottom: 30px; } .header h2 { margin: 0; color: #000000; font-size: 26px; text-transform: uppercase; font-weight: 900;} .header p { margin: 5px 0 0 0; color: #52525b; font-size: 14px; font-weight: bold;} .title-box { text-align: right; } .title-box h1 { margin: 0; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; font-size: 28px; font-weight: 900;} .info-box { background: #f4f4f5; padding: 15px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #e4e4e7; display: flex; gap: 20px; } .info-box div { flex: 1; font-size: 14px; } table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; } th { background-color: #000000; color: white; padding: 12px; text-align: left; text-transform: uppercase; letter-spacing: 1px; font-size: 12px;} .total-box { display: flex; justify-content: flex-end; } .total-box div { width: 250px; padding: 20px; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 8px; text-align: right; } .total-box strong { font-size: 1.5rem; color: #000000; } .total-box span { color: #dc2626; font-weight: 900;} @page { size: A4; margin: 10mm; }</style></head><body> <div class="header"><div> ${logoHtml} <h2>${tallerNombre}</h2><p>${tallerDir}</p><p>Tel: ${tallerTel}</p></div><div class="title-box"><h1>${esCotizacion ? 'COTIZACIÓN' : 'PRESUPUESTO OFICIAL'}</h1><p style="font-weight:bold;">Fecha: ${fecha}</p>${!esCotizacion ? `<p style="color:gray;">Orden N°: ${ordenNro}</p>` : ''}</div></div><div class="info-box"><div><strong>Cliente:</strong> ${cliente}</div><div><strong>Vehículo:</strong> ${vehiculo} <span style="color:gray; font-style:italic;">${patente}</span></div></div><table><thead><tr><th>Descripción del Servicio / Repuesto</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Precio Unit.</th><th style="text-align: right;">Subtotal</th></tr></thead><tbody> ${filasTabla} </tbody></table><div class="total-box"><div><strong>TOTAL: <br><span>$${total.toLocaleString('es-AR')}</span></strong></div></div><script>window.onload=function(){window.print();};window.onafterprint=function(){window.close();};</script></body></html>`;
+        
+        const ventanaImpresion = window.open('', '_blank'); 
+        ventanaImpresion.document.write(htmlImpresion); 
+        ventanaImpresion.document.close(); 
+        document.getElementById('modal-presupuesto').style.display='none';
     }
     async function generarPDFOficial() { const id_orden = document.getElementById('modal_orden_id').value; const resItems = await fetch(`/api/ordenes/${id_orden}/detalles`); const itemsReales = await resItems.json(); crearMagiaPDF(itemsReales, "Orden Oficial");limpiarPantallaPresupuesto();}
 
