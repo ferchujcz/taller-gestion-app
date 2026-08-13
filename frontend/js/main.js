@@ -351,24 +351,26 @@ function mostrarNotificacion(mensaje, tipo = "info") {
         } catch (e) { mostrarNotificacion("Error al guardar la configuración: " + e.message, "error");} 
     }
 
-    // --- SISTEMA GENERAL Y DB ---
     async function cargarDatosGlobales() {
         try {
-            // Recuperamos el token que se guardó al hacer login
             const token = localStorage.getItem("token");
-            const headersAutenticados = {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            };
+            if (!token) throw new Error("Sin sesión activa");
 
-            const resC = await fetch('/api/clientes/', { headers: headersAutenticados }); 
-            if (!resC.ok) throw new Error("No autorizado o DB apagada");
+            // El interceptor global ya adjunta el token a esta llamada
+            const resC = await fetch('/api/clientes/'); 
+            
+            // Si el servidor rechaza la conexión (ej: base de datos borrada)
+            if (!resC.ok) {
+                localStorage.removeItem("token");
+                window.location.href = "login.html";
+                return;
+            }
             
             const clientes = await resC.json(); 
             document.getElementById('cliente_id').innerHTML = '<option value="">Seleccione...</option>'; 
             clientes.forEach(c => document.getElementById('cliente_id').innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
             
-            const resV = await fetch('/api/vehiculos/', { headers: headersAutenticados }); 
+            const resV = await fetch('/api/vehiculos/'); 
             const vehiculos = await resV.json();
             vehiculosLocales = vehiculos; 
             actualizarListaMarcas();      
@@ -380,8 +382,12 @@ function mostrarNotificacion(mensaje, tipo = "info") {
             cargarCaja(); 
             cargarEmpleados(); 
             cargarPresentesDashboard();
+            if(typeof cargarInventario === 'function') cargarInventario();
+
         } catch(e) { 
-            console.error("🚨 Falla en datos globales o falta de sesión:", e); 
+            console.warn("Sesión inválida. Redirigiendo al login..."); 
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
         }
     }
     async function cargarTablero() {
@@ -637,31 +643,46 @@ function mostrarNotificacion(mensaje, tipo = "info") {
         } catch(e){ console.error("Error al cargar caja", e); renderizarGraficoFinanzas(0,0); } 
     }
     
-// ARREGLO DEL FORMULARIO DE LA CAJA GENERAL
-document.getElementById('formCaja').addEventListener('submit', async (e) => { 
-    e.preventDefault(); 
-    try {
-        const radioSeleccionado = document.querySelector('input[name="caja_tipo"]:checked');
-        const tipoSeleccionado = radioSeleccionado ? radioSeleccionado.value : 'INGRESO'; 
-        
-        // ACÁ ESTABA EL ERROR: Le faltaba la barra final a /api/caja/
-        const res = await fetch('/api/caja/', { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ 
-                tipo: tipoSeleccionado, 
-                metodo_pago: document.getElementById('caja_metodo').value, 
-                monto: parseFloat(document.getElementById('caja_monto').value), 
-                motivo: document.getElementById('caja_motivo').value 
-            }) 
-        }); 
-        if (!res.ok) throw new Error(await res.text());
-        document.getElementById('formCaja').reset(); 
-        document.getElementById('caja_motivo').placeholder = 'Ej: Cobro servicio...'; 
-        mostrarNotificacion("✅ Movimiento registrado en Caja.", "exito");
-        cargarCaja(); 
-    } catch(e) { mostrarNotificacion("Error al registrar movimiento", "error"); }
-});
+    // ARREGLO DEL FORMULARIO DE CAJA (Con bloqueo de doble clic)
+    const formCaja = document.getElementById('formCaja');
+    if (formCaja) {
+        // Clonamos y reemplazamos el formulario para matar cualquier evento duplicado viejo
+        const nuevoFormCaja = formCaja.cloneNode(true);
+        formCaja.parentNode.replaceChild(nuevoFormCaja, formCaja);
+
+        nuevoFormCaja.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            const btnSubmit = e.submitter;
+            btnSubmit.disabled = true; // Bloquea el botón
+            btnSubmit.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Guardando...';
+
+            try {
+                const radioSeleccionado = document.querySelector('input[name="caja_tipo"]:checked');
+                const tipoSeleccionado = radioSeleccionado ? radioSeleccionado.value : 'INGRESO'; 
+                
+                const res = await fetch('/api/caja/', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ 
+                        tipo: tipoSeleccionado, 
+                        metodo_pago: document.getElementById('caja_metodo').value, 
+                        monto: parseFloat(document.getElementById('caja_monto').value), 
+                        motivo: document.getElementById('caja_motivo').value 
+                    }) 
+                }); 
+                if (!res.ok) throw new Error(await res.text());
+                nuevoFormCaja.reset(); 
+                document.getElementById('caja_motivo').placeholder = 'Ej: Cobro servicio...'; 
+                mostrarNotificacion("✅ Movimiento registrado en Caja.", "exito");
+                cargarCaja(); 
+            } catch(e) { 
+                mostrarNotificacion("Error al registrar movimiento", "error"); 
+            } finally {
+                btnSubmit.disabled = false; // Desbloquea el botón
+                btnSubmit.innerHTML = '💾 Guardar en Caja';
+            }
+        });
+    }
     async function eliminarMovimientoCaja(id) { if(confirm("¿Seguro que desea borrar este movimiento de caja?")) { try { await fetch(`/api/caja/${id}`, { method: 'DELETE' }); cargarCaja(); } catch(e) {} } }
     
     // --- ASISTENCIA (QR MÓVIL Y REPORTE) ---
@@ -670,23 +691,23 @@ document.getElementById('formCaja').addEventListener('submit', async (e) => {
         const dni = document.getElementById('fichada_movil_dni').value; 
         if (!dni) return; 
         try { 
-            // 1. Registramos la fichada
             const res = await fetch('/api/asistencia/fichar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ documento: dni }) }); 
             const data = await res.json(); 
             if (res.ok) { 
                 mostrarNotificacion(data.mensaje, "exito"); 
                 document.getElementById('fichada_movil_dni').value = ''; 
                 
-                // 2. Buscamos las tareas de ese mecánico
                 try {
                     const resEmp = await fetch('/api/empleados/');
                     const empleados = await resEmp.json();
-                    const mecanico = empleados.find(e => e.documento === dni);
+                    // Búsqueda flexible por DNI
+                    const mecanico = empleados.find(e => e.documento == dni); 
                     
                     if (mecanico) {
                         const resTar = await fetch('/api/tareas/');
                         const tareas = await resTar.json();
-                        const misTareas = tareas.filter(t => t.empleado_id === mecanico.id && t.estado !== 'Terminada');
+                        // Filtramos las tareas pendientes de este mecánico específico
+                        const misTareas = tareas.filter(t => t.empleado_id == mecanico.id && t.estado !== 'Terminada');
                         
                         const panel = document.getElementById('fichada_panel_tareas');
                         const lista = document.getElementById('fichada_lista_tareas');
@@ -694,16 +715,20 @@ document.getElementById('formCaja').addEventListener('submit', async (e) => {
                         
                         if (misTareas.length > 0) {
                             misTareas.forEach(t => {
+                                const vehiculoStr = t.vehiculo || 'Vehículo en Taller';
+                                const boxStr = t.box || 'General';
+                                
                                 lista.innerHTML += `
                                 <div style="background:#f4f4f5; padding:12px; border-radius:8px; display: flex; flex-direction: column; gap: 5px;">
-                                    <span style="font-size: 0.8rem; color: gray;"><strong>${t.vehiculo}</strong> | Box: ${t.box || 'A Confirmar'}</span>
-                                    <strong>${t.descripcion}</strong>
-                                    <span style="font-size: 0.85rem; color: var(--warning);"><i class="ph ph-clock"></i> ${t.estado}</span>
+                                    <span style="font-size: 0.8rem; color: gray;"><strong>${vehiculoStr}</strong> | Box: ${boxStr}</span>
+                                    <strong style="color: var(--dark); font-size: 1.1rem;">${t.descripcion}</strong>
+                                    <span style="font-size: 0.85rem; color: var(--warning); font-weight: bold;"><i class="ph ph-clock"></i> ${t.estado}</span>
                                 </div>`;
                             });
                             panel.style.display = 'block';
                         } else {
                             panel.style.display = 'none';
+                            mostrarNotificacion("Fichaje exitoso. No tenés tareas pendientes.", "info");
                         }
                     }
                 } catch(err) { console.warn("No se pudieron cargar las tareas del mecánico."); }
@@ -958,29 +983,7 @@ document.getElementById('formCaja').addEventListener('submit', async (e) => {
         } catch(e) { mostrarNotificacion("Error al procesar el cobro: " + e.message, "error"); }
     }
 
-    // ARREGLO DEL FORMULARIO DE LA CAJA GENERAL
-    document.getElementById('formCaja').addEventListener('submit', async (e) => { 
-        e.preventDefault(); 
-        try {
-            // Detectamos si el administrador apretó el botón de INGRESO o de GASTO
-            const tipoSeleccionado = document.querySelector('input[name="caja_tipo"]:checked').value;
-            
-            const res = await fetch('/api/caja/', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ 
-                    tipo: tipoSeleccionado, 
-                    metodo_pago: document.getElementById('caja_metodo').value, 
-                    monto: parseFloat(document.getElementById('caja_monto').value), 
-                    motivo: document.getElementById('caja_motivo').value 
-                }) 
-            }); 
-            if (!res.ok) throw new Error(await res.text());
-            document.getElementById('formCaja').reset(); 
-            document.getElementById('caja_motivo').placeholder = 'Ej: Cobro servicio, Venta aceite...'; // Reset visual
-            cargarCaja(); 
-        } catch(e) { mostrarNotificacion("Error al registrar movimiento: " + e.message, "error"); }
-    });
+
     async function calcularMetricasAvanzadas() {
         try {
             // 1. CÁLCULO DE TIEMPO PROMEDIO (Ahora lee correctamente la hora local)
